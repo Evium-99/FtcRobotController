@@ -5,7 +5,7 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 
 
-@TeleOp(name="Evium 2023 - TeleOP 1", group="Linear Opmode")
+@TeleOp(name="Evium 2023 - TeleOP 1")
 public class Evium23 extends LinearOpMode {
 
     // Define Cords to Power Function
@@ -63,68 +63,15 @@ public class Evium23 extends LinearOpMode {
         // run until the end of the match (driver presses STOP)
         while (opModeIsActive()) {
 
-            double leftStickDegrees = cordToDeg(gamepad1.left_stick_x, gamepad1.left_stick_y);
-            double power = cordToPower(gamepad1.left_stick_x, gamepad1.left_stick_y);
+            double y = -gamepad1.left_stick_y; // Remember, Y stick value is reversed
+            double x = gamepad1.left_stick_x * 1.1; // Counteract imperfect strafing
+            double rx = gamepad1.right_stick_x;
 
-            // if (gamepad1.left_trigger)
-
-            if ((0 < leftStickDegrees && leftStickDegrees < 45) || (leftStickDegrees == 45)) {
-                // *B
-                double percentageRight = (45 - leftStickDegrees)/45;
-                motor1.setPower(power*percentageRight);
-                motor2.setPower(power);
-                motor3.setPower(power*percentageRight);
-                motor4.setPower(power);
-            } else if ((45 < leftStickDegrees && leftStickDegrees < 90) || (leftStickDegrees == 90)) {
-                // *A
-                double percentageForwardFrom45 = (leftStickDegrees - 45)/45;
-                motor1.setPower(power);
-                motor2.setPower(power*percentageForwardFrom45);
-                motor3.setPower(power);
-                motor4.setPower(power*percentageForwardFrom45);
-            } else if ((90 < leftStickDegrees && leftStickDegrees < 135) || (leftStickDegrees == 135)) {
-                // *H
-                double inversePercentage135From90 = 1 - ((leftStickDegrees - 90)/45);
-                motor1.setPower(power);
-                motor2.setPower(power*inversePercentage135From90);
-                motor3.setPower(power);
-                motor4.setPower(power*inversePercentage135From90);
-            } else if ((135 < leftStickDegrees && leftStickDegrees < 180) || (leftStickDegrees == 180)) {
-                // *G
-                double percentage180From135 = (leftStickDegrees - 135)/45;
-                motor1.setPower(power);
-                motor2.setPower(-power*percentage180From135);
-                motor3.setPower(power);
-                motor4.setPower(-power*percentage180From135);
-            } else if ((180 < leftStickDegrees && leftStickDegrees < 225) || (leftStickDegrees == 225)) {
-                // F
-                double inversePercentage225From180 = 1 - ((leftStickDegrees - 180)/45);
-                motor1.setPower(power*inversePercentage225From180);
-                motor2.setPower(-power);
-                motor3.setPower(power*inversePercentage225From180);
-                motor4.setPower(-power);
-            } else if ((225 < leftStickDegrees && leftStickDegrees < 270) || (leftStickDegrees == 270)) {
-                // E
-                double percentage270From225 = (leftStickDegrees - 225)/45;
-                motor1.setPower(-power*percentage270From225);
-                motor2.setPower(-power);
-                motor3.setPower(-power*percentage270From225);
-                motor4.setPower(-power);
-            } else if ((270 < leftStickDegrees && leftStickDegrees < 315) || (leftStickDegrees == 315)) {
-                // D
-                double inversePercentage315From270 = 1 - ((leftStickDegrees - 270)/45);
-                motor1.setPower(-power);
-                motor2.setPower(-power*inversePercentage315From270);
-                motor3.setPower(-power);
-                motor4.setPower(-power*inversePercentage315From270);
-            } else if ((315 < leftStickDegrees && leftStickDegrees < 360) || (leftStickDegrees == 360) || (leftStickDegrees == 0)) {
-                // C
-                double percentage360From315 = (leftStickDegrees - 315)/45;
-                motor1.setPower(-power);
-                motor2.setPower(power*percentage360From315);
-                motor3.setPower(-power);
-                motor4.setPower(power*percentage360From315);
-            }
+            double denominator = Math.max(Math.abs(y) + Math.abs(x) + Math.abs(rx), 1);
+            double frontLeftPower = (y + x + rx) / denominator;
+            double backLeftPower = (y - x + rx) / denominator;
+            double frontRightPower = (y - x - rx) / denominator;
+            double backRightPower = (y + x - rx) / denominator;
 
             // Show the elapsed game time and wheel power.
             telemetry.update();
