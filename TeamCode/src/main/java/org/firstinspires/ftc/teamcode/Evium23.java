@@ -73,6 +73,11 @@ public class Evium23 extends LinearOpMode {
             double frontRightPower = (y - x - rx) / denominator;
             double backRightPower = (y + x - rx) / denominator;
 
+            motor1.setPower(frontRightPower);
+            motor2.setPower(frontLeftPower);
+            motor3.setPower(backLeftPower);
+            motor4.setPower(backRightPower);
+
             // Show the elapsed game time and wheel power.
             telemetry.update();
         }
