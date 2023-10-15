@@ -3,9 +3,10 @@ package org.firstinspires.ftc.teamcode;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 
 
-@TeleOp(name="Evium 2023 - TeleOP 1")
+@TeleOp(name="Evium 2023 - TeleOP 2")
 public class Evium23 extends LinearOpMode {
 
     // Define Cords to Power Function
@@ -52,7 +53,7 @@ public class Evium23 extends LinearOpMode {
 
         // Change The Left side to Backwards
         motor1.setDirection(DcMotor.Direction.FORWARD);
-        motor2.setDirection(DcMotor.Direction.REVERSE);
+        motor2.setDirection(DcMotor.Direction.FORWARD);
         motor3.setDirection(DcMotor.Direction.REVERSE);
         motor4.setDirection(DcMotor.Direction.FORWARD);
 
