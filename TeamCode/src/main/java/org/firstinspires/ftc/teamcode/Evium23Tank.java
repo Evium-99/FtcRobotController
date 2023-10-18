@@ -5,11 +5,12 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DistanceSensor;
 import com.qualcomm.robotcore.hardware.Servo;
-import com.qualcomm.robotcore.util.ElapsedTime;
+
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 
 
-@TeleOp(name="Evium TeleOP 2")
-public class Evium23 extends LinearOpMode {
+@TeleOp(name="Evium TeleOP Tank")
+public class Evium23Tank extends LinearOpMode {
 
     // Declare OpMode members.
 
@@ -28,8 +29,6 @@ public class Evium23 extends LinearOpMode {
     private boolean gamepad1BReleased = true; // Check if B is Released
     private boolean gamepad1TriangleReleased = true;
     private boolean gamepad2Enabled = false;
-    private ElapsedTime runtime = new ElapsedTime();
-    private double dPadTimeout = runtime.milliseconds();
 
     @Override
     public void runOpMode() {
@@ -56,14 +55,14 @@ public class Evium23 extends LinearOpMode {
         armServo = hardwareMap.get(Servo.class, "arm");
 
         // Control Hub I2C
-        // distanceLeft = hardwareMap.get(DistanceSensor.class, "BLDS");
-        // distanceRight = hardwareMap.get(DistanceSensor.class, "BRDS");
+        distanceLeft = hardwareMap.get(DistanceSensor.class, "BLDS");
+        distanceRight = hardwareMap.get(DistanceSensor.class, "BRDS");
 
         // Change The Left side to Backwards on Drive Motors
         motor1.setDirection(DcMotor.Direction.FORWARD);
-        motor2.setDirection(DcMotor.Direction.REVERSE);
+        motor2.setDirection(DcMotor.Direction.FORWARD);
         motor3.setDirection(DcMotor.Direction.REVERSE);
-        motor4.setDirection(DcMotor.Direction.REVERSE);
+        motor4.setDirection(DcMotor.Direction.FORWARD);
 
         // Set Core Hex Motor Direction, Mode, and Breaking
         leftHex.setDirection(DcMotor.Direction.FORWARD);
@@ -74,40 +73,28 @@ public class Evium23 extends LinearOpMode {
 
         // Wait for the game to start (driver presses PLAY)
         waitForStart();
-        gripServo.setPosition(0.5);
 
         // run until the end of the match (driver presses STOP)
         while (opModeIsActive()) {
-            double y;
-            double x;
-            double rx;
+            double leftSide;
+            double rightSide;
             if (gamepad2Enabled) {
-                y = -gamepad2.left_stick_y; // Remember, Y stick value is reversed
-                x = gamepad2.left_stick_x * 1.1; // Counteract imperfect strafing
-                rx = gamepad2.right_stick_x;
+                leftSide = gamepad2.left_stick_x;
+                rightSide = gamepad2.right_stick_y;
             } else {
-                y = -gamepad1.left_stick_y; // Remember, Y stick value is reversed
-                x = gamepad1.left_stick_x * 1.1; // Counteract imperfect strafing
-                rx = gamepad1.right_stick_x;
+                leftSide = gamepad1.left_stick_y;
+                rightSide = gamepad1.right_stick_y;
             }
 
-            double denominator = Math.max(Math.abs(y) + Math.abs(x) + Math.abs(rx), 1);
-            double frontLeftPower = (y + x + rx) / denominator;
-            double backLeftPower = (y - x + rx) / denominator;
-            double frontRightPower = (y - x - rx) / denominator;
-            double backRightPower = (y + x - rx) / denominator;
+            double frontLeftPower = leftSide;
+            double backLeftPower = leftSide;
+            double frontRightPower = rightSide;
+            double backRightPower = rightSide;
 
-            if (gamepad1.x) {
-                motor1.setPower(0.5);
-                motor2.setPower(0.5);
-                motor3.setPower(0.5);
-                motor4.setPower(0.5);
-            } else {
-                motor1.setPower(frontRightPower);
-                motor2.setPower(frontLeftPower);
-                motor3.setPower(backLeftPower);
-                motor4.setPower(backRightPower);
-            }
+            motor1.setPower(-frontRightPower);
+            motor2.setPower(-frontLeftPower);
+            motor3.setPower(backLeftPower);
+            motor4.setPower(backRightPower);
 
             // Up and Down Arm Base
             if ((gamepad1.left_trigger != 0)) {
@@ -133,31 +120,29 @@ public class Evium23 extends LinearOpMode {
 
             if ((gamepad1AReleased) && (gamepad1.a)) {
                 gamepad1AReleased = false;
-                if (gripServo.getPosition() == 0.5) {
+                if (gripServo.getPosition() == 0) {
                     gripServo.setPosition(1);
                 } else if (gripServo.getPosition() == 1) {
-                    gripServo.setPosition(0.5);
+                    gripServo.setPosition(0);
                 } else {
-                    gripServo.setPosition(0.5);
+                    gripServo.setPosition(0);
                 }
             } else if (!gamepad1.a) {
                 gamepad1AReleased = true;
             }
 
             // Arm Servo Manual Control armServo.setPosition(0)
-            if (gamepad1.dpad_up  && (runtime.milliseconds() > (dPadTimeout + 100))) {
-                dPadTimeout = runtime.milliseconds();
-                armServo.setPosition(armServo.getPosition()+0.03);
+            if (gamepad1.dpad_up) {
+                armServo.setPosition(armServo.getPosition()+0.05);
             } else if (gamepad1.dpad_down) {
-                dPadTimeout = runtime.milliseconds();
-                armServo.setPosition(armServo.getPosition()-0.03);
+                armServo.setPosition(armServo.getPosition()-0.05);
             }
 
             // Arm Servo
             if ((gamepad1BReleased) && (gamepad1.b)) {
                 gamepad1BReleased = false;
                 if (armServo.getPosition() == 0) {
-                    armServo.setPosition(1);
+                    armServo.setPosition(0.9);
                 } else if (armServo.getPosition() == 1) {
                     armServo.setPosition(0);
                 } else {
@@ -168,11 +153,10 @@ public class Evium23 extends LinearOpMode {
             }
 
             // Show the elapsed game time and wheel power.
-            // telemetry.addData("Distance Sensor Left", distanceLeft.getDistance(DistanceUnit.CM));
-            // telemetry.addData("Distance Sensor Right", distanceRight.getDistance(DistanceUnit.CM));
-            // telemetry.addData("Left Hex Motor Value", leftHex.getCurrentPosition());
-            // telemetry.addData("Right Hex Motor Value", rightHex.getCurrentPosition());
-            telemetry.addData("Runtime", runtime.seconds());
+            telemetry.addData("Distance Sensor Left", distanceLeft.getDistance(DistanceUnit.CM));
+            telemetry.addData("Distance Sensor Right", distanceRight.getDistance(DistanceUnit.CM));
+            telemetry.addData("Left Hex Motor Value", leftHex.getCurrentPosition());
+            telemetry.addData("Right Hex Motor Value", rightHex.getCurrentPosition());
             telemetry.update();
         }
     }
