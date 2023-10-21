@@ -2,7 +2,6 @@ package org.firstinspires.ftc.teamcode;
 
 import com.acmerobotics.roadrunner.geometry.Pose2d;
 import com.acmerobotics.roadrunner.geometry.Vector2d;
-import com.acmerobotics.roadrunner.trajectory.Trajectory;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -13,6 +12,7 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.BuiltinCameraDirection;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.teamcode.drive.SampleMecanumDrive;
+import org.firstinspires.ftc.teamcode.trajectorysequence.TrajectorySequence;
 import org.firstinspires.ftc.vision.VisionPortal;
 import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
 import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
@@ -20,8 +20,8 @@ import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
 import java.util.HashMap;
 import java.util.List;
 
-@Autonomous(name="Competition Autonomous")
-public class CompAuto extends LinearOpMode {
+@Autonomous(name="CompFRed")
+public class CompFRed extends LinearOpMode {
 
     static final HashMap<String, Vector2d> positions = new HashMap<String, Vector2d>();
 
@@ -115,21 +115,32 @@ public class CompAuto extends LinearOpMode {
         rightHex.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
         SampleMecanumDrive drive = new SampleMecanumDrive(hardwareMap);
+        drive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
         Pose2d startPose = new Pose2d(-60, -40, Math.toRadians(90));
 
         drive.setPoseEstimate(startPose);
 
-        Trajectory myTrajectory = drive.trajectoryBuilder(new Pose2d(-60, -40, Math.toRadians(90)))
-                .splineTo(positions.get("p3-4"), Math.toRadians(90))
-                .splineTo(positions.get("p2-4"), Math.toRadians(90))
-                .splineTo(positions.get("p2-1"), Math.toRadians(90))
+        TrajectorySequence ts = drive.trajectorySequenceBuilder(startPose)
+                .forward(60)
+                .turn(Math.toRadians(41)) // Turns 45 degrees counter-clockwise
+                .back(100)
                 .build();
 
 
         // Wait for the game to start (driver presses PLAY)
         waitForStart();
-        drive.followTrajectory(myTrajectory);
+        gripServo.setPosition(1);
+        armServo.setPosition(0.5);
+        drive.followTrajectorySequence(ts);
+        double t = getRuntime();
+        while (getRuntime() - t < 2) {
+            leftHex.setPower(-0.6);
+            rightHex.setPower(-0.6);
+        }
+        leftHex.setPower(0);
+        rightHex.setPower(0);
+        armServo.setPosition(1);
         gripServo.setPosition(0.5);
 
         // run until the end of the match (driver presses STOP)
