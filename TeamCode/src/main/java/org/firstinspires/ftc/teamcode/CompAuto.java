@@ -1,6 +1,7 @@
 package org.firstinspires.ftc.teamcode;
 
 import com.acmerobotics.roadrunner.geometry.Pose2d;
+import com.acmerobotics.roadrunner.geometry.Vector2d;
 import com.acmerobotics.roadrunner.trajectory.Trajectory;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
@@ -16,10 +17,40 @@ import org.firstinspires.ftc.vision.VisionPortal;
 import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
 import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
 
+import java.util.HashMap;
 import java.util.List;
 
 @Autonomous(name="Competition Autonomous")
 public class CompAuto extends LinearOpMode {
+
+    static final HashMap<String, Vector2d> positions = new HashMap<String, Vector2d>();
+
+    static {
+        positions.put("p1-1", new Vector2d(30.36, 43.72));
+        positions.put("p1-2", new Vector2d(36, 43.72));
+        positions.put("p1-3", new Vector2d(42.69, 43.72));
+        positions.put("p1-4", new Vector2d(36, 12));
+        positions.put("p1-5", new Vector2d(63.62, 44.91));
+
+        positions.put("p2-1", new Vector2d(-41.83, 43.72));
+        positions.put("p2-2", new Vector2d(-36, 43.72));
+        positions.put("p2-3", new Vector2d(-29.42, 43.72));
+        positions.put("p2-4", new Vector2d(-36, 12));
+        positions.put("p2-5", new Vector2d(-61.61, 44.91));
+
+        positions.put("p3-1", new Vector2d(-36, -60));
+        positions.put("p3-2", new Vector2d(-24, -60));
+        positions.put("p3-3", new Vector2d(-12, -60));
+        positions.put("p3-4", new Vector2d(-36, -36));
+        positions.put("p3-5", new Vector2d(-61.61, -44.16));
+
+        positions.put("p4-1", new Vector2d(12, -60));
+        positions.put("p4-2", new Vector2d(24, -60));
+        positions.put("p4-3", new Vector2d(36, -60));
+        positions.put("p4-4", new Vector2d(36, -36));
+        positions.put("p4-5", new Vector2d(63.62, -45.06));
+
+    }
 
     private WebcamName webcam1, webcam2;
     private boolean oldLeftBumper;
@@ -85,12 +116,14 @@ public class CompAuto extends LinearOpMode {
 
         SampleMecanumDrive drive = new SampleMecanumDrive(hardwareMap);
 
-        Pose2d startPose = new Pose2d(10, -8, Math.toRadians(90));
+        Pose2d startPose = new Pose2d(-60, -40, Math.toRadians(90));
 
         drive.setPoseEstimate(startPose);
 
-        Trajectory myTrajectory = drive.trajectoryBuilder(new Pose2d())
-                .forward(5)
+        Trajectory myTrajectory = drive.trajectoryBuilder(new Pose2d(-60, -40, Math.toRadians(90)))
+                .lineToConstantHeading(positions.get("p3-4"))
+                .lineToConstantHeading(positions.get("p2-4"))
+                .lineToConstantHeading(positions.get("p2-1"))
                 .build();
 
 
