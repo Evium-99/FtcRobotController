@@ -122,9 +122,9 @@ public class CompFBlue extends LinearOpMode {
         drive.setPoseEstimate(startPose);
 
         TrajectorySequence ts = drive.trajectorySequenceBuilder(startPose)
-                .forward(60)
-                .turn(Math.toRadians(-41)) // Turns 45 degrees counter-clockwise
-                .back(100)
+                .forward(4)
+                .turn(Math.toRadians(-40)) // Turns 45 degrees counter-clockwise
+                .back(78)
                 .build();
 
 
