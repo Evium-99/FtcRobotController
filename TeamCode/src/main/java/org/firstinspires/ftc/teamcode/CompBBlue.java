@@ -124,7 +124,7 @@ public class CompBBlue extends LinearOpMode {
         TrajectorySequence ts = drive.trajectorySequenceBuilder(startPose)
                 .forward(27)
                 .turn(Math.toRadians(-41)) // Turns 45 degrees counter-clockwise
-                .back(40)
+                .back(38)
                 .build();
 
 

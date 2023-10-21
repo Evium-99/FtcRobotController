@@ -123,8 +123,8 @@ public class CompBRed extends LinearOpMode {
 
         TrajectorySequence ts = drive.trajectorySequenceBuilder(startPose)
                 .forward(27)
-                .turn(Math.toRadians(41)) // Turns 45 degrees counter-clockwise
-                .back(40)
+                .turn(Math.toRadians(40)) // Turns 45 degrees counter-clockwise
+                .back(38)
                 .build();
 
 
@@ -134,7 +134,7 @@ public class CompBRed extends LinearOpMode {
         armServo.setPosition(0.5);
         drive.followTrajectorySequence(ts);
         double t = getRuntime();
-        while (getRuntime() - t < 2) {
+        while (getRuntime() - t < 1.5) {
             leftHex.setPower(-0.6);
             rightHex.setPower(-0.6);
         }
