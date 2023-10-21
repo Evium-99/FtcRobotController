@@ -9,10 +9,25 @@ import com.qualcomm.robotcore.hardware.DistanceSensor;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
+import org.firstinspires.ftc.robotcore.external.hardware.camera.BuiltinCameraDirection;
+import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.teamcode.drive.SampleMecanumDrive;
+import org.firstinspires.ftc.vision.VisionPortal;
+import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
+import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
+
+import java.util.List;
 
 @Autonomous(name="Competition Autonomous")
 public class CompAuto extends LinearOpMode {
+
+    private WebcamName webcam1, webcam2;
+    private boolean oldLeftBumper;
+    private boolean oldRightBumper;
+    private AprilTagProcessor aprilTag;
+    private VisionPortal visionPortal;
+    private static final boolean USE_WEBCAM = true;  // true for webcam, false for phone camera
+
     // Declare OpMode members.
     private DcMotor motor1 = null; // Front Right
     private DcMotor motor2 = null; // Front Left
@@ -28,6 +43,8 @@ public class CompAuto extends LinearOpMode {
 
     @Override
     public void runOpMode() {
+
+        initAprilTag();
 
         telemetry.addData("Status", "Initialized");
         telemetry.update();
@@ -86,4 +103,34 @@ public class CompAuto extends LinearOpMode {
         while (opModeIsActive()) {
         }
     }
+
+    private void initAprilTag() {
+
+        // Create the AprilTag processor the easy way.
+        aprilTag = AprilTagProcessor.easyCreateWithDefaults();
+
+        // Create the vision portal the easy way.
+        if (USE_WEBCAM) {
+            visionPortal = VisionPortal.easyCreateWithDefaults(
+                    hardwareMap.get(WebcamName.class, "Webcam 1"), aprilTag);
+        } else {
+            visionPortal = VisionPortal.easyCreateWithDefaults(
+                    BuiltinCameraDirection.BACK, aprilTag);
+        }
+
+    }
+
+    private void localize() {
+        ElapsedTime localizationRuntime = new ElapsedTime();
+        localizationRuntime.reset();
+        localizationRuntime.startTime();
+        while (localizationRuntime.milliseconds()/1000 > 3) {
+            List<AprilTagDetection> currentDetections = aprilTag.getDetections();
+            for (AprilTagDetection detection : currentDetections) {
+                if (detection.metadata != null) {} else {}
+            }
+        }
+        localizationRuntime.reset();
+    }
+
 }

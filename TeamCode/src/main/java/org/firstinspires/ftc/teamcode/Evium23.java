@@ -82,12 +82,12 @@ public class Evium23 extends LinearOpMode {
             double x;
             double rx;
             if (gamepad2Enabled) {
-                y = -gamepad2.left_stick_y; // Remember, Y stick value is reversed
-                x = gamepad2.left_stick_x * 1.1; // Counteract imperfect strafing
+                y = Math.pow(-gamepad2.left_stick_y, 3); // Remember, Y stick value is reversed
+                x = Math.pow(gamepad2.left_stick_x * 1.1, 3); // Counteract imperfect strafing
                 rx = gamepad2.right_stick_x;
             } else {
-                y = -gamepad1.left_stick_y; // Remember, Y stick value is reversed
-                x = gamepad1.left_stick_x * 1.1; // Counteract imperfect strafing
+                y = Math.pow(-gamepad1.left_stick_y, 3); // Remember, Y stick value is reversed
+                x = Math.pow(gamepad1.left_stick_x * 1.1, 3); // Counteract imperfect strafing
                 rx = gamepad1.right_stick_x;
             }
 
@@ -111,11 +111,11 @@ public class Evium23 extends LinearOpMode {
 
             // Up and Down Arm Base
             if ((gamepad1.left_trigger != 0)) {
-                leftHex.setPower(gamepad1.left_trigger);
-                rightHex.setPower(gamepad1.left_trigger);
+                leftHex.setPower(0.5*Math.pow(gamepad1.left_trigger, 3));
+                rightHex.setPower(0.5*Math.pow(gamepad1.left_trigger, 3));
             } else if (gamepad1.right_trigger != 0) {
-                leftHex.setPower(-gamepad1.right_trigger);
-                rightHex.setPower(-gamepad1.right_trigger);
+                leftHex.setPower(0.7*Math.pow(-gamepad1.right_trigger, 3));
+                rightHex.setPower(0.7*Math.pow(-gamepad1.right_trigger, 3));
             } else {
                 leftHex.setPower(0);
                 rightHex.setPower(0);
