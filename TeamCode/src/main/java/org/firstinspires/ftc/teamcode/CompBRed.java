@@ -130,6 +130,7 @@ public class CompBRed extends LinearOpMode {
 
         // Wait for the game to start (driver presses PLAY)
         waitForStart();
+
         gripServo.setPosition(1);
         armServo.setPosition(0.5);
         drive.followTrajectorySequence(ts);

@@ -44,8 +44,8 @@ public class AprilTagEX extends LinearOpMode {
         telemetry.addData("DS preview on/off", "3 dots, Camera Stream");
         telemetry.addData(">", "Touch Play to start OpMode");
         telemetry.update();
-        motor0 = hardwareMap.get(DcMotor.class, "right");
-        motor3 = hardwareMap.get(DcMotor.class, "left");
+        motor0 = hardwareMap.get(DcMotor.class, "motor1");
+        motor3 = hardwareMap.get(DcMotor.class, "motor4");
         motor0.setDirection(DcMotor.Direction.FORWARD);
         motor3.setDirection(DcMotor.Direction.REVERSE);
         waitForStart();
@@ -126,6 +126,7 @@ public class AprilTagEX extends LinearOpMode {
         // Set the camera (webcam vs. built-in RC phone camera).
         if (USE_WEBCAM) {
             builder.setCamera(hardwareMap.get(WebcamName.class, "Webcam1"));
+
         } else {
             builder.setCamera(BuiltinCameraDirection.BACK);
         }

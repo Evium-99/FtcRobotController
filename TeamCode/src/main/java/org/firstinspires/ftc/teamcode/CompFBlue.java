@@ -122,9 +122,9 @@ public class CompFBlue extends LinearOpMode {
         drive.setPoseEstimate(startPose);
 
         TrajectorySequence ts = drive.trajectorySequenceBuilder(startPose)
-                .forward(4)
+                .forward(3.5)
                 .turn(Math.toRadians(-40)) // Turns 45 degrees counter-clockwise
-                .back(78)
+                .back(84)
                 .build();
 
 
@@ -133,6 +133,8 @@ public class CompFBlue extends LinearOpMode {
         gripServo.setPosition(1);
         armServo.setPosition(0.5);
         drive.followTrajectorySequence(ts);
+        armServo.setPosition(1);
+        gripServo.setPosition(0.5);
 
         // run until the end of the match (driver presses STOP)
         while (opModeIsActive()) {

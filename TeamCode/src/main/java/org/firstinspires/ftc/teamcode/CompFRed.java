@@ -122,9 +122,9 @@ public class CompFRed extends LinearOpMode {
         drive.setPoseEstimate(startPose);
 
         TrajectorySequence ts = drive.trajectorySequenceBuilder(startPose)
-                .forward(4)
+                .forward(3.5)
                 .turn(Math.toRadians(40)) // Turns 45 degrees counter-clockwise
-                .back(78)
+                .back(84)
                 .build();
 
 
