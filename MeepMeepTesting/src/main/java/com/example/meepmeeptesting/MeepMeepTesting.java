@@ -72,7 +72,7 @@ public class MeepMeepTesting {
                 .followTrajectorySequence(drive ->
                         drive.trajectorySequenceBuilder(new Pose2d(-60, 15, Math.toRadians(0)))
                                 .forward(27)
-                                .turn(Math.toRadians(-90)) // Turns 45 degrees counter-clockwise
+                                .turn(Math.toRadians(-90)) // Turns 90 degrees counter-clockwise
                                 .back(35)
                                 .build()
                 );
