@@ -11,17 +11,27 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.hardware.camera.BuiltinCameraDirection;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
+import org.firstinspires.ftc.robotcore.external.tfod.Recognition;
 import org.firstinspires.ftc.teamcode.drive.SampleMecanumDrive;
 import org.firstinspires.ftc.teamcode.trajectorysequence.TrajectorySequence;
 import org.firstinspires.ftc.vision.VisionPortal;
 import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
 import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
+import org.firstinspires.ftc.vision.tfod.TfodProcessor;
 
 import java.util.HashMap;
 import java.util.List;
 
 @Autonomous(name="FullAutoProgram")
 public class FullAutoProgram extends LinearOpMode {
+    private static final boolean USE_WEBCAM = true;
+    private static final String TFOD_MODEL_FILE = "/sdcard/FIRST/tflitemodels/Red & Blue Prop.tflite";
+    private static final String[] LABELS = {
+            "Blue Prop",
+            "Red Prop"
+    };
+    private TfodProcessor tfod;
+    private VisionPortal visionPortal;
 
     static final HashMap<Integer, Pose2d> aprils = new HashMap<Integer, Pose2d>();
     static {
@@ -67,11 +77,7 @@ public class FullAutoProgram extends LinearOpMode {
     }
 
     private WebcamName webcam1, webcam2;
-    private boolean oldLeftBumper;
-    private boolean oldRightBumper;
     private AprilTagProcessor aprilTag;
-    private VisionPortal visionPortal;
-    private static final boolean USE_WEBCAM = true;  // true for webcam, false for phone camera
 
     // Declare OpMode members.
     private DcMotor motor1 = null; // Front Right
@@ -86,17 +92,12 @@ public class FullAutoProgram extends LinearOpMode {
     private DistanceSensor distanceLeft = null; // Distance Sensor
     private ElapsedTime runtime = new ElapsedTime();
 
+    private Pose2d startPose;
+
     @Override
     public void runOpMode() {
 
-        initAprilTag();
-
-        telemetry.addData("Status", "Initialized");
-        telemetry.update();
-
-        // Initialize the hardware variables. Note that the strings used here as parameters
-        // to 'get' must correspond to the names assigned during the robot configuration
-        // step (using the FTC Robot Controller app on the phone).
+        initVision();
 
         // Control Hub Motors
         motor1 = hardwareMap.get(DcMotor.class, "motor1");
@@ -131,51 +132,118 @@ public class FullAutoProgram extends LinearOpMode {
         SampleMecanumDrive drive = new SampleMecanumDrive(hardwareMap);
         drive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
-        Pose2d startPose = localize();
+        startPose = localize();
         if (startPose == null) {
             startPose = new Pose2d(-60, -40, Math.toRadians(90));
         }
 
         drive.setPoseEstimate(startPose);
 
-        TrajectorySequence ts = drive.trajectorySequenceBuilder(startPose)
-                .forward(3.5)
-                .turn(Math.toRadians(-40)) // Turns 45 degrees counter-clockwise
-                .back(84)
+        TrajectorySequence lookLeft = drive.trajectorySequenceBuilder(startPose)
+                .turn(Math.toRadians(30)) // Turns 15 degrees counter-clockwise
                 .build();
+
+        TrajectorySequence lookRight = drive.trajectorySequenceBuilder(startPose)
+                .turn(Math.toRadians(-30)) // Turns 15 degrees clockwise
+                .build();
+
+        TrajectorySequence moveUpABit = drive.trajectorySequenceBuilder(startPose)
+                .forward(5)
+                .build();
+
+        telemetry.addData("Status", "Initialized");
+        telemetry.update();
 
 
         // Wait for the game to start (driver presses PLAY)
         waitForStart();
+        // Send Power to Grip Pixel
         gripServo.setPosition(1);
         armServo.setPosition(0.5);
-        drive.followTrajectorySequence(ts);
+        // Look For Team Prop by looking left and right
+        telemetryTfod();
+        telemetry.update();
+        drive.followTrajectorySequence(moveUpABit); // Move Up a Bit
+        telemetryTfod();
+        telemetry.update();
+        drive.followTrajectorySequence(lookLeft); // Looking Left
+        telemetryTfod();
+        telemetry.update();
+        drive.followTrajectorySequence(lookRight); // Back to Center
+        telemetryTfod();
+        telemetry.update();
+        drive.followTrajectorySequence(lookRight); // Looking Right
+        telemetryTfod();
+        telemetry.update();
+        // Drop Pixel
         armServo.setPosition(1);
         gripServo.setPosition(0.5);
 
         // run until the end of the match (driver presses STOP)
         while (opModeIsActive()) {
+            telemetryTfod();
+            telemetry.update();
         }
+        visionPortal.close();
     }
 
-    private void initAprilTag() {
+    private void telemetryTfod() {
 
-        // Create the AprilTag processor the easy way.
-        aprilTag = AprilTagProcessor.easyCreateWithDefaults();
+        List<Recognition> currentRecognitions = tfod.getRecognitions();
+        telemetry.addData("# Objects Detected", currentRecognitions.size());
 
-        // Create the vision portal the easy way.
+        // Step through the list of recognitions and display info for each one.
+        for (Recognition recognition : currentRecognitions) {
+            double x = (recognition.getLeft() + recognition.getRight()) / 2 ;
+            double y = (recognition.getTop()  + recognition.getBottom()) / 2 ;
+
+            telemetry.addData(""," ");
+            telemetry.addData("Image", "%s (%.0f %% Conf.)", recognition.getLabel(), recognition.getConfidence() * 100);
+            telemetry.addData("- Position", "%.0f / %.0f", x, y);
+            telemetry.addData("- Size", "%.0f x %.0f", recognition.getWidth(), recognition.getHeight());
+        }   // end for() loop
+
+    }
+
+    private void initVision() {
+        // Create the TensorFlow processor by using a builder.
+        tfod = new TfodProcessor.Builder()
+                .setModelFileName(TFOD_MODEL_FILE)
+                .setModelLabels(LABELS)
+                .build();
+
+        // Create the vision portal by using a builder.
+        VisionPortal.Builder builder = new VisionPortal.Builder();
+
+        // Set the camera (webcam vs. built-in RC phone camera).
         if (USE_WEBCAM) {
-            visionPortal = VisionPortal.easyCreateWithDefaults(
-                    hardwareMap.get(WebcamName.class, "Webcam1"), aprilTag);
+            builder.setCamera(hardwareMap.get(WebcamName.class, "Webcam 1"));
         } else {
-            visionPortal = VisionPortal.easyCreateWithDefaults(
-                    BuiltinCameraDirection.BACK, aprilTag);
+            builder.setCamera(BuiltinCameraDirection.BACK);
         }
 
+        builder.enableLiveView(true);
+
+        // Create Processor for April Tags
+        aprilTag = AprilTagProcessor.easyCreateWithDefaults();
+
+        // Set and enable the processor for tfod and apriltags.
+        builder.addProcessor(tfod);
+        builder.addProcessor(aprilTag);
+
+        // Build the Vision Portal, using the above settings.
+        visionPortal = builder.build();
+
+        // Set confidence threshold for TFOD recognitions, at any time.
+        tfod.setMinResultConfidence(0.72f);
     }
 
     private Pose2d aprilToBotLocation(int tagID, double botRelationX, double botRelationY, double yaw) {
-        return new Pose2d(aprils.get(tagID).getX() - botRelationX, aprils.get(tagID).getY() - botRelationY, aprils.get(tagID).getHeading() - yaw);
+        Pose2d tag = aprils.get(tagID);
+        if(tag == null){
+            return startPose;
+        }
+        return new Pose2d(tag.getX() - botRelationX, tag.getY() - botRelationY, tag.getHeading() - yaw);
     }
 
     private Pose2d localize() {
@@ -183,12 +251,12 @@ public class FullAutoProgram extends LinearOpMode {
         ElapsedTime localizationRuntime = new ElapsedTime();
         localizationRuntime.reset();
         localizationRuntime.startTime();
-        while (localizationRuntime.milliseconds()/1000 > 3) {
+        while (localizationRuntime.milliseconds()/1000 < 3) {
             List<AprilTagDetection> currentDetections = aprilTag.getDetections();
             for (AprilTagDetection detection : currentDetections) {
                 if (detection.metadata != null) { // detection.ftcPose.x, detection.ftcPose.y,
-                    latestPose = aprilToBotLocation();
-                } else {}
+                    latestPose = aprilToBotLocation(detection.id, detection.ftcPose.x, detection.ftcPose.y, detection.ftcPose.yaw);
+                }
             }
         }
         localizationRuntime.reset();

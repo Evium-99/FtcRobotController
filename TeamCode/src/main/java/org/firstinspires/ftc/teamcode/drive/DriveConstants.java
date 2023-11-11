@@ -49,7 +49,7 @@ public class DriveConstants {
     public static double WHEEL_RADIUS = 1.495; // in
     // https://www.revrobotics.com/content/docs/REV-41-1656-DR.pdf
     public static double GEAR_RATIO = 1; // output (wheel) speed / input (motor) speed
-    public static double TRACK_WIDTH = 15.5; // in
+    public static double TRACK_WIDTH = 16.46; // in
 
     /*
      * These are the feedforward parameters used to model the drive motor behavior. If you are using
@@ -70,7 +70,7 @@ public class DriveConstants {
      */
     public static double MAX_VEL = 37.39599809325099;
     public static double MAX_ACCEL = 30;
-    public static double MAX_ANG_VEL = Math.toRadians(215);
+    public static double MAX_ANG_VEL = 3.4195919025467085;
     public static double MAX_ANG_ACCEL = Math.toRadians(60);
 
     /*

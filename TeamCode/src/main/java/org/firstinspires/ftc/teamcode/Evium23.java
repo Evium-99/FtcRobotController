@@ -1,14 +1,16 @@
 package org.firstinspires.ftc.teamcode;
 
+import static com.qualcomm.robotcore.hardware.DcMotor.RunMode.STOP_AND_RESET_ENCODER;
+
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DistanceSensor;
 import com.qualcomm.robotcore.hardware.Servo;
-import com.qualcomm.robotcore.util.ElapsedTime;
+import com.qualcomm.robotcore.hardware.TouchSensor;
 
 
-@TeleOp(name="Evium TeleOP 2")
+@TeleOp(name="Evium TeleOP")
 public class Evium23 extends LinearOpMode {
 
     // Declare OpMode members.
@@ -21,22 +23,18 @@ public class Evium23 extends LinearOpMode {
     private DcMotor rightHex = null; // Right Hex
     private Servo gripServo = null; // Grip Servo
     private Servo armServo = null; // Arm Servo
+    private Servo shoota = null; // Shooter Servo
     private DistanceSensor distanceRight = null; // Distance Sensor
     private DistanceSensor distanceLeft = null; // Distance Sensor
+    private TouchSensor armHit = null; // Arm Touch Sensor
 
     private boolean gamepad1AReleased = true; // Check if A is Released
     private boolean gamepad1BReleased = true; // Check if B is Released
     private boolean gamepad1TriangleReleased = true;
     private boolean gamepad2Enabled = false;
-    private ElapsedTime runtime = new ElapsedTime();
-    private double dPadTimeout = runtime.milliseconds();
 
     @Override
     public void runOpMode() {
-
-        telemetry.addData("Status", "Initialized");
-        telemetry.update();
-
         // Initialize the hardware variables. Note that the strings used here as parameters
         // to 'get' must correspond to the names assigned during the robot configuration
         // step (using the FTC Robot Controller app on the phone).
@@ -54,10 +52,12 @@ public class Evium23 extends LinearOpMode {
         // Control Hub Servos
         gripServo = hardwareMap.get(Servo.class, "grip");
         armServo = hardwareMap.get(Servo.class, "arm");
+        shoota = hardwareMap.get(Servo.class, "shooter");
 
         // Control Hub I2C
         // distanceLeft = hardwareMap.get(DistanceSensor.class, "BLDS");
         // distanceRight = hardwareMap.get(DistanceSensor.class, "BRDS");
+        armHit = hardwareMap.get(TouchSensor.class, "armHit");
 
         // Change The Left side to Backwards on Drive Motors
         motor1.setDirection(DcMotor.Direction.FORWARD);
@@ -75,6 +75,10 @@ public class Evium23 extends LinearOpMode {
         // Wait for the game to start (driver presses PLAY)
         waitForStart();
         gripServo.setPosition(0.5);
+
+        boolean stopArm = false;
+        double downPower = 0.5;
+        boolean gamepad1StartReleased = true;
 
         // run until the end of the match (driver presses STOP)
         while (opModeIsActive()) {
@@ -97,28 +101,41 @@ public class Evium23 extends LinearOpMode {
             double frontRightPower = (y - x - rx) / denominator;
             double backRightPower = (y + x - rx) / denominator;
 
-            if (gamepad1.x) {
-                motor1.setPower(0.5);
-                motor2.setPower(0.5);
-                motor3.setPower(0.5);
-                motor4.setPower(0.5);
-            } else {
-                motor1.setPower(frontRightPower);
-                motor2.setPower(frontLeftPower);
-                motor3.setPower(backLeftPower);
-                motor4.setPower(backRightPower);
-            }
+            motor1.setPower(frontRightPower);
+            motor2.setPower(frontLeftPower);
+            motor3.setPower(backLeftPower);
+            motor4.setPower(backRightPower);
 
-            // Up and Down Arm Base
-            if ((gamepad1.left_trigger != 0)) {
-                leftHex.setPower(0.5*Math.pow(gamepad1.left_trigger, 3));
-                rightHex.setPower(0.5*Math.pow(gamepad1.left_trigger, 3));
-            } else if (gamepad1.right_trigger != 0) {
-                leftHex.setPower(0.7*Math.pow(-gamepad1.right_trigger, 3));
-                rightHex.setPower(0.7*Math.pow(-gamepad1.right_trigger, 3));
-            } else {
-                leftHex.setPower(0);
-                rightHex.setPower(0);
+            if (armHit.isPressed() && !stopArm) {
+                rightHex.setMode(STOP_AND_RESET_ENCODER);
+                leftHex.setMode(STOP_AND_RESET_ENCODER);
+                stopArm = true;
+            } else if (armHit.isPressed() && stopArm) {
+                leftHex.setTargetPosition(-20);
+                rightHex.setTargetPosition(-20);
+                leftHex.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                rightHex.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                leftHex.setPower(downPower);
+                rightHex.setPower(downPower);
+            }
+            if (!armHit.isPressed()) {
+                stopArm = false;
+            }
+            if (gamepad1.left_bumper) {
+                leftHex.setTargetPosition(-20);
+                rightHex.setTargetPosition(-20);
+                leftHex.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                rightHex.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                leftHex.setPower(downPower);
+                rightHex.setPower(downPower);
+            }
+            if (gamepad1.right_bumper) {
+                leftHex.setTargetPosition(-377);
+                rightHex.setTargetPosition(-377);
+                leftHex.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                rightHex.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                leftHex.setPower(downPower);
+                rightHex.setPower(downPower);
             }
 
             // Second Controller Transfer
@@ -144,15 +161,6 @@ public class Evium23 extends LinearOpMode {
                 gamepad1AReleased = true;
             }
 
-            // Arm Servo Manual Control armServo.setPosition(0)
-            if (gamepad1.dpad_up  && (runtime.milliseconds() > (dPadTimeout + 100))) {
-                dPadTimeout = runtime.milliseconds();
-                armServo.setPosition(armServo.getPosition()+0.03);
-            } else if (gamepad1.dpad_down) {
-                dPadTimeout = runtime.milliseconds();
-                armServo.setPosition(armServo.getPosition()-0.03);
-            }
-
             // Arm Servo
             if ((gamepad1BReleased) && (gamepad1.b)) {
                 gamepad1BReleased = false;
@@ -166,14 +174,19 @@ public class Evium23 extends LinearOpMode {
             } else if (!gamepad1.b) {
                 gamepad1BReleased = true;
             }
-
-            // Show the elapsed game time and wheel power.
-            // telemetry.addData("Distance Sensor Left", distanceLeft.getDistance(DistanceUnit.CM));
-            // telemetry.addData("Distance Sensor Right", distanceRight.getDistance(DistanceUnit.CM));
-            // telemetry.addData("Left Hex Motor Value", leftHex.getCurrentPosition());
-            // telemetry.addData("Right Hex Motor Value", rightHex.getCurrentPosition());
-            telemetry.addData("Runtime", runtime.seconds());
-            telemetry.update();
+            // shoota servo
+            if ((gamepad1StartReleased) && (gamepad1.start)) {
+                gamepad1StartReleased = false;
+                if (shoota.getPosition() == 0) {
+                    shoota.setPosition(1);
+                } else if (shoota.getPosition() == 1) {
+                    shoota.setPosition(0);
+                } else {
+                    shoota.setPosition(0);
+                }
+            } else if (!gamepad1.start) {
+                gamepad1StartReleased = true;
+            }
         }
     }
 }
