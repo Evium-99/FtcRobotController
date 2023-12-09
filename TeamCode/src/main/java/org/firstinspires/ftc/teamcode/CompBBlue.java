@@ -5,6 +5,7 @@ import com.acmerobotics.roadrunner.geometry.Vector2d;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DistanceSensor;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
@@ -14,11 +15,9 @@ import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.teamcode.drive.SampleMecanumDrive;
 import org.firstinspires.ftc.teamcode.trajectorysequence.TrajectorySequence;
 import org.firstinspires.ftc.vision.VisionPortal;
-import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
 import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
 
 import java.util.HashMap;
-import java.util.List;
 
 @Autonomous(name="CompBBlue")
 public class CompBBlue extends LinearOpMode {
@@ -64,10 +63,11 @@ public class CompBBlue extends LinearOpMode {
     private DcMotor motor2 = null; // Front Left
     private DcMotor motor3 = null; // Back Left
     private DcMotor motor4 = null; // Back Right
-    private DcMotor leftHex = null; // Left Hex
-    private DcMotor rightHex = null; // Right Hex
-    private Servo gripServo = null; // Grip Servo
+    private DcMotorEx leftHex = null; // Left Hex
+    private DcMotorEx rightHex = null; // Right Hex
     private Servo armServo = null; // Arm Servo
+    private Servo gripServo1 = null; // Grip Servo 1
+    private Servo gripServo2 = null; // Grip Servo 2
     private DistanceSensor distanceRight = null; // Distance Sensor
     private DistanceSensor distanceLeft = null; // Distance Sensor
     private ElapsedTime runtime = new ElapsedTime();
@@ -91,11 +91,12 @@ public class CompBBlue extends LinearOpMode {
         motor4 = hardwareMap.get(DcMotor.class, "motor4");
 
         // Expansion Hub Motors
-        leftHex = hardwareMap.get(DcMotor.class, "leftHex");
-        rightHex = hardwareMap.get(DcMotor.class, "rightHex");
+        leftHex = hardwareMap.get(DcMotorEx.class, "leftHex");
+        rightHex = hardwareMap.get(DcMotorEx.class, "rightHex");
 
         // Control Hub Servos
-        gripServo = hardwareMap.get(Servo.class, "grip");
+        gripServo1 = hardwareMap.get(Servo.class, "grip1");
+        gripServo2 = hardwareMap.get(Servo.class, "grip2");
         armServo = hardwareMap.get(Servo.class, "arm");
 
         // Control Hub I2C
@@ -109,10 +110,10 @@ public class CompBBlue extends LinearOpMode {
         motor4.setDirection(DcMotor.Direction.REVERSE);
 
         // Set Core Hex Motor Direction, Mode, and Breaking
-        leftHex.setDirection(DcMotor.Direction.FORWARD);
-        rightHex.setDirection(DcMotor.Direction.FORWARD);
-        leftHex.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        rightHex.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        leftHex.setDirection(DcMotorEx.Direction.FORWARD);
+        rightHex.setDirection(DcMotorEx.Direction.FORWARD);
+        leftHex.setZeroPowerBehavior(DcMotorEx.ZeroPowerBehavior.BRAKE);
+        rightHex.setZeroPowerBehavior(DcMotorEx.ZeroPowerBehavior.BRAKE);
 
         SampleMecanumDrive drive = new SampleMecanumDrive(hardwareMap);
         drive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
@@ -122,35 +123,52 @@ public class CompBBlue extends LinearOpMode {
         drive.setPoseEstimate(startPose);
 
         TrajectorySequence ts = drive.trajectorySequenceBuilder(startPose)
-                .forward(27)
-                .turn(Math.toRadians(-40)) // Turns 45 degrees counter-clockwise
-                .back(38)
+                .forward(26.5)
+                .turn(Math.toRadians(-95)) // Turns 90 degrees counter-clockwise
+                .back(32)
                 .build();
 
 
         // Wait for the game to start (driver presses PLAY)
         waitForStart();
-        gripServo.setPosition(1);
-        armServo.setPosition(0.5);
+        gripServo2.setPosition(-1); // Close Purple Side
+        gripServo1.setPosition(1); // Close Yellow Side?
+        armServo.setPosition(0.8);
         drive.followTrajectorySequence(ts);
+        armServo.setPosition(0);
+        leftHex.setTargetPosition(-377);
+        rightHex.setTargetPosition(-377);
+        leftHex.setMode(DcMotorEx.RunMode.RUN_TO_POSITION);
+        rightHex.setMode(DcMotorEx.RunMode.RUN_TO_POSITION);
+        rightHex.setVelocity(200);
+        leftHex.setVelocity(200);
         double t = getRuntime();
-        while (getRuntime() - t < 1.5) {
-            leftHex.setPower(-0.6);
-            rightHex.setPower(-0.6);
-        }
-        leftHex.setPower(0);
-        rightHex.setPower(0);
-        armServo.setPosition(1);
-        gripServo.setPosition(0.5);
-
-        TrajectorySequence pts = drive.trajectorySequenceBuilder(ts.end())
-                .forward(2)
-                .build();
-
-        drive.followTrajectorySequence(pts);
 
         // run until the end of the match (driver presses STOP)
         while (opModeIsActive()) {
+            if (leftHex.getCurrentPosition() < -250) {
+                rightHex.setVelocity(120);
+                leftHex.setVelocity(120);
+            }
+            if ((getRuntime() - t) > 1) {
+                armServo.setPosition(1);
+            }
+            if (((getRuntime() - t) > 5) && !((getRuntime() - t) > 6)) {
+                gripServo2.setPosition(1); // Open Purple Side
+                gripServo1.setPosition(-1); // Open Yellow Side?
+            }
+            if ((getRuntime() - t) > 6.5) {
+                leftHex.setTargetPosition(-20);
+                rightHex.setTargetPosition(-20);
+                leftHex.setMode(DcMotorEx.RunMode.RUN_TO_POSITION);
+                rightHex.setMode(DcMotorEx.RunMode.RUN_TO_POSITION);
+                rightHex.setVelocity(200);
+                leftHex.setVelocity(200);
+            }
+            if ((getRuntime() - t) > 10) {
+                gripServo2.setPosition(-1); // Close Purple Side
+                gripServo1.setPosition(1); // Close Yellow Side?
+            }
         }
     }
 
@@ -169,18 +187,4 @@ public class CompBBlue extends LinearOpMode {
         }
 
     }
-
-    private void localize() {
-        ElapsedTime localizationRuntime = new ElapsedTime();
-        localizationRuntime.reset();
-        localizationRuntime.startTime();
-        while (localizationRuntime.milliseconds()/1000 > 3) {
-            List<AprilTagDetection> currentDetections = aprilTag.getDetections();
-            for (AprilTagDetection detection : currentDetections) {
-                if (detection.metadata != null) {} else {}
-            }
-        }
-        localizationRuntime.reset();
-    }
-
 }

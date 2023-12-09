@@ -1,8 +1,11 @@
 package org.firstinspires.ftc.teamcode;
 
+import android.util.Size;
+
 import com.acmerobotics.roadrunner.geometry.Pose2d;
 import com.acmerobotics.roadrunner.geometry.Vector2d;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DistanceSensor;
@@ -22,8 +25,23 @@ import org.firstinspires.ftc.vision.tfod.TfodProcessor;
 import java.util.HashMap;
 import java.util.List;
 
-@Autonomous(name="FullAutoProgram")
+class tfClientsideRecognition {
+    // found, sideRecognised, x, y, confidance
+    // If sideRecognised = Center and x>250 then on right spike line else Center Spike Line
+    // If sideRecognised = Right
+    boolean found = false;
+    String sideRecognised;
+    int x;
+    int y;
+    float confidance;
+}
+
+@Disabled
+@Autonomous(name="FullAutoProgram 2.0.17")
 public class FullAutoProgram extends LinearOpMode {
+    public int SEARCH_TIMEOUT_CYCLES = 2;
+    public int VISION_SEARCH_CYCLES = 100;
+    public int SEARCH_ANGLE = 30;
     private static final boolean USE_WEBCAM = true;
     private static final String TFOD_MODEL_FILE = "/sdcard/FIRST/tflitemodels/Red & Blue Prop.tflite";
     private static final String[] LABELS = {
@@ -80,13 +98,14 @@ public class FullAutoProgram extends LinearOpMode {
     private AprilTagProcessor aprilTag;
 
     // Declare OpMode members.
+    private Servo gripServo1 = null; // Grip Servo 1
+    private Servo gripServo2 = null; // Grip Servo 2
     private DcMotor motor1 = null; // Front Right
     private DcMotor motor2 = null; // Front Left
     private DcMotor motor3 = null; // Back Left
     private DcMotor motor4 = null; // Back Right
     private DcMotor leftHex = null; // Left Hex
     private DcMotor rightHex = null; // Right Hex
-    private Servo gripServo = null; // Grip Servo
     private Servo armServo = null; // Arm Servo
     private DistanceSensor distanceRight = null; // Distance Sensor
     private DistanceSensor distanceLeft = null; // Distance Sensor
@@ -105,17 +124,17 @@ public class FullAutoProgram extends LinearOpMode {
         motor3 = hardwareMap.get(DcMotor.class, "motor3");
         motor4 = hardwareMap.get(DcMotor.class, "motor4");
 
+
         // Expansion Hub Motors
         leftHex = hardwareMap.get(DcMotor.class, "leftHex");
         rightHex = hardwareMap.get(DcMotor.class, "rightHex");
 
         // Control Hub Servos
-        gripServo = hardwareMap.get(Servo.class, "grip");
         armServo = hardwareMap.get(Servo.class, "arm");
+        gripServo1 = hardwareMap.get(Servo.class, "grip1");
+        gripServo2 = hardwareMap.get(Servo.class, "grip2");
 
         // Control Hub I2C
-        // distanceLeft = hardwareMap.get(DistanceSensor.class, "BLDS");
-        // distanceRight = hardwareMap.get(DistanceSensor.class, "BRDS");
 
         // Change The Left side to Backwards on Drive Motors
         motor1.setDirection(DcMotor.Direction.FORWARD);
@@ -130,7 +149,7 @@ public class FullAutoProgram extends LinearOpMode {
         rightHex.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
         SampleMecanumDrive drive = new SampleMecanumDrive(hardwareMap);
-        drive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        drive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
         startPose = localize();
         if (startPose == null) {
@@ -139,70 +158,147 @@ public class FullAutoProgram extends LinearOpMode {
 
         drive.setPoseEstimate(startPose);
 
-        TrajectorySequence lookLeft = drive.trajectorySequenceBuilder(startPose)
-                .turn(Math.toRadians(30)) // Turns 15 degrees counter-clockwise
-                .build();
-
-        TrajectorySequence lookRight = drive.trajectorySequenceBuilder(startPose)
-                .turn(Math.toRadians(-30)) // Turns 15 degrees clockwise
-                .build();
-
         TrajectorySequence moveUpABit = drive.trajectorySequenceBuilder(startPose)
-                .forward(5)
+                .addDisplacementMarker(() -> {
+                    telemetry.addData("Status", "Move From Wall");
+                    telemetry.update();
+                    // Send Power to Grip Pixel
+                    gripServo1.setPosition(1);
+                    gripServo2.setPosition(-1);
+                    armServo.setPosition(1);
+                })
+                .forward(12)
+                .build();
+
+        TrajectorySequence leftSpikeMark = drive.trajectorySequenceBuilder(startPose)
+                .addDisplacementMarker(() -> {
+                    telemetry.addData("Status", "Go To Left Spike Mark");
+                    telemetry.update();
+                })
+                .forward(18)
+                .turn(1.7)
+                .forward(8)
+                .build();
+
+        TrajectorySequence rightSpikeMark = drive.trajectorySequenceBuilder(startPose)
+                .addDisplacementMarker(() -> {
+                    telemetry.addData("Status", "Go To Right Spike Mark");
+                    telemetry.update();
+                })
+                .forward(18)
+                .turn(-1.6)
+                .back(7)
+                .build();
+
+        TrajectorySequence backSpikeMark = drive.trajectorySequenceBuilder(startPose)
+                .addDisplacementMarker(() -> {
+                    telemetry.addData("Status", "Go To Back Spike Mark");
+                    telemetry.update();
+                })
+                .forward(17)
+                .turn(0.45)
                 .build();
 
         telemetry.addData("Status", "Initialized");
         telemetry.update();
 
-
         // Wait for the game to start (driver presses PLAY)
         waitForStart();
-        // Send Power to Grip Pixel
-        gripServo.setPosition(1);
-        armServo.setPosition(0.5);
-        // Look For Team Prop by looking left and right
-        telemetryTfod();
-        telemetry.update();
-        drive.followTrajectorySequence(moveUpABit); // Move Up a Bit
-        telemetryTfod();
-        telemetry.update();
-        drive.followTrajectorySequence(lookLeft); // Looking Left
-        telemetryTfod();
-        telemetry.update();
-        drive.followTrajectorySequence(lookRight); // Back to Center
-        telemetryTfod();
-        telemetry.update();
-        drive.followTrajectorySequence(lookRight); // Looking Right
-        telemetryTfod();
-        telemetry.update();
-        // Drop Pixel
-        armServo.setPosition(1);
-        gripServo.setPosition(0.5);
 
-        // run until the end of the match (driver presses STOP)
+        // Move Away from Wall
+        drive.followTrajectorySequence(moveUpABit);
+
+        // Look For Team Prop by looking left and right
+        findTeamProp(SEARCH_TIMEOUT_CYCLES, VISION_SEARCH_CYCLES, SEARCH_ANGLE, drive);
+        drive.followTrajectorySequence(backSpikeMark); // Assume Left Spike Mark
         while (opModeIsActive()) {
-            telemetryTfod();
-            telemetry.update();
+            gripServo2.setPosition(1); // Open Purple Side
+            telemetry.addData("Status", "Done");
         }
+
         visionPortal.close();
     }
 
-    private void telemetryTfod() {
+    private float[] lookForProp(int cycles) {
 
-        List<Recognition> currentRecognitions = tfod.getRecognitions();
-        telemetry.addData("# Objects Detected", currentRecognitions.size());
+        for (int i = 0; i < cycles; i++) {
+            List<Recognition> currentRecognitions = tfod.getRecognitions();
+            // Step through the list of recognitions and display info for each one.
+            for (Recognition recognition : currentRecognitions) {
+                double x = (recognition.getLeft() + recognition.getRight()) / 2 ;
+                double y = (recognition.getTop()  + recognition.getBottom()) / 2 ;
 
-        // Step through the list of recognitions and display info for each one.
-        for (Recognition recognition : currentRecognitions) {
-            double x = (recognition.getLeft() + recognition.getRight()) / 2 ;
-            double y = (recognition.getTop()  + recognition.getBottom()) / 2 ;
+                return new float[] {recognition.getConfidence(), (float) x, (float) y};
+            }
+        }
+        return new float[0];
+    }
 
-            telemetry.addData(""," ");
-            telemetry.addData("Image", "%s (%.0f %% Conf.)", recognition.getLabel(), recognition.getConfidence() * 100);
-            telemetry.addData("- Position", "%.0f / %.0f", x, y);
-            telemetry.addData("- Size", "%.0f x %.0f", recognition.getWidth(), recognition.getHeight());
-        }   // end for() loop
+    private tfClientsideRecognition findTeamProp(int cyclesTimeout, int visionCycles, int angle, SampleMecanumDrive drive) {
+        boolean found = false;
+        float[] tempPropRecognitionStore = lookForProp(visionCycles);
+        tfClientsideRecognition propDataStore = null;
+        TrajectorySequence lookLeft = drive.trajectorySequenceBuilder(startPose)
+                .addDisplacementMarker(() -> {
+                    telemetry.addData("Status", "Looking For Prop: CCW");
+                    telemetry.update();
+                })
+                .turn(Math.toRadians(angle)) // Turns 15 degrees counter-clockwise
+                .build();
 
+        TrajectorySequence lookRight = drive.trajectorySequenceBuilder(startPose)
+                .addDisplacementMarker(() -> {
+                    telemetry.addData("Status", "Looking For Prop: CW");
+                    telemetry.update();
+                })
+                .turn(Math.toRadians(-angle)) // Turns 15 degrees clockwise
+                .build();
+        for (int i = 0; i < cyclesTimeout; i++) {
+            drive.followTrajectorySequence(lookLeft); // Looking Left
+            tempPropRecognitionStore = lookForProp(visionCycles);
+            if (tempPropRecognitionStore.length > 0) {
+                propDataStore = new tfClientsideRecognition();
+                propDataStore.found = true;
+                propDataStore.confidance = tempPropRecognitionStore[0];
+                propDataStore.x = (int) tempPropRecognitionStore[1];
+                propDataStore.y = (int) tempPropRecognitionStore[2];
+                found = true;
+            }
+            drive.followTrajectorySequence(lookLeft); // Looking Left Again
+            tempPropRecognitionStore = lookForProp(visionCycles);
+            if (tempPropRecognitionStore.length > 0) {
+                propDataStore = new tfClientsideRecognition();
+                propDataStore.found = true;
+                propDataStore.confidance = tempPropRecognitionStore[0];
+                propDataStore.x = (int) tempPropRecognitionStore[1];
+                propDataStore.y = (int) tempPropRecognitionStore[2];
+                found = true;
+            }
+            drive.followTrajectorySequence(lookRight); // Back to Slightly Left
+            tempPropRecognitionStore = lookForProp(visionCycles);
+            if (tempPropRecognitionStore.length > 0) {
+                propDataStore = new tfClientsideRecognition();
+                propDataStore.found = true;
+                propDataStore.confidance = tempPropRecognitionStore[0];
+                propDataStore.x = (int) tempPropRecognitionStore[1];
+                propDataStore.y = (int) tempPropRecognitionStore[2];
+                found = true;
+            }
+            drive.followTrajectorySequence(lookRight); // Back to Center
+            tempPropRecognitionStore = lookForProp(visionCycles);
+            if (tempPropRecognitionStore.length > 0) {
+                propDataStore = new tfClientsideRecognition();
+                propDataStore.found = true;
+                propDataStore.confidance = tempPropRecognitionStore[0];
+                propDataStore.x = (int) tempPropRecognitionStore[1];
+                propDataStore.y = (int) tempPropRecognitionStore[2];
+                found = true;
+            }
+            if (found) {
+                return propDataStore;
+            }
+        }
+        return new tfClientsideRecognition();
     }
 
     private void initVision() {
@@ -221,6 +317,8 @@ public class FullAutoProgram extends LinearOpMode {
         } else {
             builder.setCamera(BuiltinCameraDirection.BACK);
         }
+
+        builder.setCameraResolution(new Size(1280, 720));
 
         builder.enableLiveView(true);
 

@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode;
 
+import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.roadrunner.geometry.Pose2d;
 import com.acmerobotics.roadrunner.geometry.Vector2d;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
@@ -15,14 +16,19 @@ import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.teamcode.drive.SampleMecanumDrive;
 import org.firstinspires.ftc.teamcode.trajectorysequence.TrajectorySequence;
 import org.firstinspires.ftc.vision.VisionPortal;
-import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
 import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
 
 import java.util.HashMap;
-import java.util.List;
 
-@Autonomous(name="CompFBlue")
-public class CompFBlue extends LinearOpMode {
+@Config
+@Autonomous(name="TEST_CompBRed", group = "Testing")
+public class TestCompBRed extends LinearOpMode {
+    public static int BACK = 28;
+    public static int TURN = 100;
+    public static int GO_TO_BOARD = 30;
+    public static int ENCODER_POS = -368;
+    public static int VELOCITY_1 = 220;
+    public int VELOCITY_2 = 120;
 
     static final HashMap<String, Vector2d> positions = new HashMap<String, Vector2d>();
 
@@ -125,9 +131,9 @@ public class CompFBlue extends LinearOpMode {
         drive.setPoseEstimate(startPose);
 
         TrajectorySequence ts = drive.trajectorySequenceBuilder(startPose)
-                .forward(3.5)
-                .turn(Math.toRadians(-97)) // Turns 45 degrees counter-clockwise
-                .back(84)
+                .forward(BACK)
+                .turn(Math.toRadians(TURN))
+                .back(GO_TO_BOARD) // Originally 34
                 .build();
 
 
@@ -135,16 +141,46 @@ public class CompFBlue extends LinearOpMode {
         waitForStart();
         gripServo2.setPosition(-1); // Close Purple Side
         gripServo1.setPosition(1); // Close Yellow Side?
+        armServo.setPosition(0.8);
         drive.followTrajectorySequence(ts);
-        leftHex.setTargetPosition(-2);
-        rightHex.setTargetPosition(-2);
+        armServo.setPosition(0);
+        leftHex.setTargetPosition(ENCODER_POS);
+        rightHex.setTargetPosition(ENCODER_POS);
         leftHex.setMode(DcMotorEx.RunMode.RUN_TO_POSITION);
         rightHex.setMode(DcMotorEx.RunMode.RUN_TO_POSITION);
-        rightHex.setVelocity(200);
-        leftHex.setVelocity(200);
+        rightHex.setVelocity(VELOCITY_1);
+        leftHex.setVelocity(VELOCITY_1);
+
+        // run until the end of the match (driver presses STOP)
+        double t = getRuntime();
 
         // run until the end of the match (driver presses STOP)
         while (opModeIsActive()) {
+            if (leftHex.getCurrentPosition() < -250) {
+                rightHex.setVelocity(VELOCITY_2);
+                leftHex.setVelocity(VELOCITY_2);
+            }
+            if ((getRuntime() - t) > 1) {
+                armServo.setPosition(1);
+            }
+            if (((getRuntime() - t) > 4) && !((getRuntime() - t) > 5)) {
+                gripServo2.setPosition(1); // Open Purple Side
+                gripServo1.setPosition(-1); // Open Yellow Side?
+            }
+            if ((getRuntime() - t) > 5.5) {
+                leftHex.setTargetPosition(-20);
+                rightHex.setTargetPosition(-20);
+                leftHex.setMode(DcMotorEx.RunMode.RUN_TO_POSITION);
+                rightHex.setMode(DcMotorEx.RunMode.RUN_TO_POSITION);
+                rightHex.setVelocity(200);
+                leftHex.setVelocity(200);
+            }
+            if ((getRuntime() - t) > 9) {
+                gripServo2.setPosition(1); // Open Purple Side
+                gripServo1.setPosition(-1); // Open Yellow Side?
+            }
+            telemetry.addData("HexPos", leftHex.getCurrentPosition());
+            telemetry.update();
         }
     }
 
@@ -163,18 +199,4 @@ public class CompFBlue extends LinearOpMode {
         }
 
     }
-
-    private void localize() {
-        ElapsedTime localizationRuntime = new ElapsedTime();
-        localizationRuntime.reset();
-        localizationRuntime.startTime();
-        while (localizationRuntime.milliseconds()/1000 > 3) {
-            List<AprilTagDetection> currentDetections = aprilTag.getDetections();
-            for (AprilTagDetection detection : currentDetections) {
-                if (detection.metadata != null) {} else {}
-            }
-        }
-        localizationRuntime.reset();
-    }
-
 }

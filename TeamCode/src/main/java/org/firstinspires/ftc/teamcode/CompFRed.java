@@ -5,6 +5,7 @@ import com.acmerobotics.roadrunner.geometry.Vector2d;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DistanceSensor;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
@@ -64,9 +65,10 @@ public class CompFRed extends LinearOpMode {
     private DcMotor motor2 = null; // Front Left
     private DcMotor motor3 = null; // Back Left
     private DcMotor motor4 = null; // Back Right
-    private DcMotor leftHex = null; // Left Hex
-    private DcMotor rightHex = null; // Right Hex
-    private Servo gripServo = null; // Grip Servo
+    private DcMotorEx leftHex = null; // Left Hex
+    private DcMotorEx rightHex = null; // Right Hex
+    private Servo gripServo1 = null; // Grip Servo 1
+    private Servo gripServo2 = null; // Grip Servo 2
     private Servo armServo = null; // Arm Servo
     private DistanceSensor distanceRight = null; // Distance Sensor
     private DistanceSensor distanceLeft = null; // Distance Sensor
@@ -91,11 +93,12 @@ public class CompFRed extends LinearOpMode {
         motor4 = hardwareMap.get(DcMotor.class, "motor4");
 
         // Expansion Hub Motors
-        leftHex = hardwareMap.get(DcMotor.class, "leftHex");
-        rightHex = hardwareMap.get(DcMotor.class, "rightHex");
+        leftHex = hardwareMap.get(DcMotorEx.class, "leftHex");
+        rightHex = hardwareMap.get(DcMotorEx.class, "rightHex");
 
         // Control Hub Servos
-        gripServo = hardwareMap.get(Servo.class, "grip");
+        gripServo1 = hardwareMap.get(Servo.class, "grip1");
+        gripServo2 = hardwareMap.get(Servo.class, "grip2");
         armServo = hardwareMap.get(Servo.class, "arm");
 
         // Control Hub I2C
@@ -109,10 +112,12 @@ public class CompFRed extends LinearOpMode {
         motor4.setDirection(DcMotor.Direction.REVERSE);
 
         // Set Core Hex Motor Direction, Mode, and Breaking
-        leftHex.setDirection(DcMotor.Direction.FORWARD);
-        rightHex.setDirection(DcMotor.Direction.FORWARD);
-        leftHex.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        rightHex.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        leftHex.setDirection(DcMotorEx.Direction.FORWARD);
+        rightHex.setDirection(DcMotorEx.Direction.FORWARD);
+        leftHex.setMode(DcMotorEx.RunMode.RUN_USING_ENCODER);
+        rightHex.setMode(DcMotorEx.RunMode.RUN_USING_ENCODER);
+        leftHex.setMode(DcMotorEx.RunMode.STOP_AND_RESET_ENCODER);
+        rightHex.setMode(DcMotorEx.RunMode.STOP_AND_RESET_ENCODER);
 
         SampleMecanumDrive drive = new SampleMecanumDrive(hardwareMap);
         drive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
@@ -123,28 +128,32 @@ public class CompFRed extends LinearOpMode {
 
         TrajectorySequence ts = drive.trajectorySequenceBuilder(startPose)
                 .forward(3.5)
-                .turn(Math.toRadians(40)) // Turns 45 degrees counter-clockwise
+                .turn(Math.toRadians(100)) // Turns 45 degrees counter-clockwise
                 .back(84)
                 .build();
 
 
         // Wait for the game to start (driver presses PLAY)
         waitForStart();
-        gripServo.setPosition(1);
+        gripServo2.setPosition(-1); // Close Purple Side
+        gripServo1.setPosition(1); // Close Yellow Side?
         armServo.setPosition(0.5);
         drive.followTrajectorySequence(ts);
-        double t = getRuntime();
-        while (getRuntime() - t < 2) {
-            leftHex.setPower(-0.6);
-            rightHex.setPower(-0.6);
-        }
-        leftHex.setPower(0);
-        rightHex.setPower(0);
-        armServo.setPosition(1);
-        gripServo.setPosition(0.5);
+
+        leftHex.setTargetPosition(-2);
+        rightHex.setTargetPosition(-2);
+        leftHex.setMode(DcMotorEx.RunMode.RUN_TO_POSITION);
+        rightHex.setMode(DcMotorEx.RunMode.RUN_TO_POSITION);
+        rightHex.setVelocity(200);
+        leftHex.setVelocity(200);
 
         // run until the end of the match (driver presses STOP)
         while (opModeIsActive()) {
+            if (!leftHex.isBusy() && !rightHex.isBusy()) {
+                armServo.setPosition(1); // Move Wrist
+                gripServo2.setPosition(1); // Open Purple Side
+                gripServo1.setPosition(-1); // Open Yellow Side?
+            }
         }
     }
 
