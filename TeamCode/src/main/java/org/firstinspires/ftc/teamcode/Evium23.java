@@ -9,6 +9,8 @@ import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.TouchSensor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
+
 
 @TeleOp(name="Evium TeleOP")
 public class Evium23 extends LinearOpMode {
@@ -36,7 +38,7 @@ public class Evium23 extends LinearOpMode {
     private Servo gripServo2 = null; // Grip Servo 2
     private Servo armServo = null; // Arm Servo
     private Servo shoota = null; // Shooter Servo
-    // private DistanceSensor distanceBack = null; // Distance Sensor Back
+     private DistanceSensor distanceBack = null; // Distance Sensor Back
     private DistanceSensor distanceFront = null; // Distance Sensor Front
     private TouchSensor armHit = null; // Arm Touch Sensor
 
@@ -76,7 +78,7 @@ public class Evium23 extends LinearOpMode {
         shoota = hardwareMap.get(Servo.class, "shooter");
 
         // Control Hub I2C
-        // distanceBack = hardwareMap.get(DistanceSensor.class, "distanceBack");
+        distanceBack = hardwareMap.get(DistanceSensor.class, "distanceBack");
         distanceFront = hardwareMap.get(DistanceSensor.class, "distanceFront");
         armHit = hardwareMap.get(TouchSensor.class, "armHit");
 
@@ -276,27 +278,27 @@ public class Evium23 extends LinearOpMode {
             }
 
             // Move back
-//            if (gamepad1.y) {
-//                double power = -((0.6*Math.log10(distanceBack.getDistance(DistanceUnit.INCH)-DISTANCE_FROM_BACKBOARD))+0.2);
-//                if (distanceBack.getDistance(DistanceUnit.INCH) < DISTANCE_FROM_BACKBOARD) {
-//                    motor1.setPower(0.1);
-//                    motor2.setPower(0.1);
-//                    motor3.setPower(0.1);
-//                    motor4.setPower(0.1);
-//                } else if (power < 0) {
-//                    motor1.setPower(power);
-//                    motor2.setPower(power);
-//                    motor3.setPower(power);
-//                    motor4.setPower(power);
-//                }
-//            }
+            if (gamepad1.y) {
+                double power = -((0.6*Math.log10(distanceBack.getDistance(DistanceUnit.INCH)-DISTANCE_FROM_BACKBOARD))+0.2);
+                if (distanceBack.getDistance(DistanceUnit.INCH) < DISTANCE_FROM_BACKBOARD) {
+                    motor1.setPower(0.1);
+                    motor2.setPower(0.1);
+                    motor3.setPower(0.1);
+                    motor4.setPower(0.1);
+                } else if (power < 0) {
+                    motor1.setPower(power);
+                    motor2.setPower(power);
+                    motor3.setPower(power);
+                    motor4.setPower(power);
+                }
+            }
             telemetry.addData("Arm Pos", leftHex.getCurrentPosition());
             // telemetry.addData("PID_Power", hexPower);
             telemetry.addData("HexLeft", leftHex.getPower());
             telemetry.addData("HexRight", rightHex.getPower());
             telemetry.addData("Sending Power", sendingPower);
 //            telemetry.addData("Encoder Resetting", armHit.isPressed());
-            // telemetry.addData("Back Distance Sensor (in)", distanceBack.getDistance(DistanceUnit.INCH));
+            telemetry.addData("Back Distance Sensor (in)", distanceBack.getDistance(DistanceUnit.INCH));
             telemetry.update();
         }
     }

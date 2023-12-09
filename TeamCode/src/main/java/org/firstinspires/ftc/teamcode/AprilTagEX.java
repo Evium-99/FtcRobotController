@@ -2,6 +2,7 @@ package org.firstinspires.ftc.teamcode;
 
 import android.annotation.SuppressLint;
 
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -14,6 +15,7 @@ import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
 
 import java.util.List;
 
+@Disabled
 @TeleOp(name = "AprilTag Test V2", group = "Evium 99")
 public class AprilTagEX extends LinearOpMode {
     double atPIDH = 0; // April Tag PID Output Horizontal
