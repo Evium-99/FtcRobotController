@@ -17,8 +17,21 @@ import org.firstinspires.ftc.teamcode.trajectorysequence.TrajectorySequence;
 @Config
 @Autonomous(name = "Distance Based Auto")
 public class distanceBasedAuto extends LinearOpMode {
-    public static double angle = 90;
+    public static double W = -1;
+    public static double Z = 1;
+    public static double Public_Angle = 90;
+    private double angleW = Public_Angle * W;
+    private double angleZ = Public_Angle * Z;
     public static double distanceForward = 28;
+    public static double backFromPixel = 5;
+    public static double strafeRight = 10;
+    public static double strafeRightB = 8 * Z;
+    public static double strafeRightC = 3 * Z;
+    public static double toBoardFromCenter = 30;
+    public static double toBoardFromLeft = 30;
+    public static double dontHitTheRigging = 20;
+    public static double toBoardFromRight = 30;
+    public static double Angle180 = 180;
     private DcMotor motor1 = null; // Front Right
     private DcMotor motor2 = null; // Front Left
     private DcMotor motor3 = null; // Back Left
@@ -86,9 +99,64 @@ public class distanceBasedAuto extends LinearOpMode {
                 .forward(distanceForward)
                 .build();
 
-        // Set Trajectory 2 to turn right
-        TrajectorySequence trajectory2 = drive.trajectorySequenceBuilder(startPose)
-                .turn(-Math.toRadians(angle))
+        // Set turnAngleW to turn W
+        TrajectorySequence turnAngleW = drive.trajectorySequenceBuilder(startPose)
+                .turn(Math.toRadians(angleW))
+                .build();
+
+        // Set turnAngleZ to turn Z
+        TrajectorySequence turnAngleZ = drive.trajectorySequenceBuilder(startPose)
+                .turn(Math.toRadians(angleZ))
+                .build();
+
+        // Set Trajectory 3 to strafe right
+        TrajectorySequence trajectory3 = drive.trajectorySequenceBuilder(startPose)
+                .strafeRight(strafeRight)
+                .build();
+
+        // Set Trajectory 3 to strafe right
+        TrajectorySequence trajectory3b = drive.trajectorySequenceBuilder(startPose)
+                .strafeRight(strafeRightB)
+                .build();
+
+        // Set Trajectory 3c to strafe right
+        TrajectorySequence trajectory3c = drive.trajectorySequenceBuilder(startPose)
+                .strafeRight(strafeRightC)
+                .build();
+
+        // Set toBoardFromCenterTraj to go back to board
+        TrajectorySequence toBoardFromCenterTraj = drive.trajectorySequenceBuilder(startPose)
+                .back(toBoardFromCenter)
+                .build();
+
+        // Set toBoardFromLeftTraj to go back to board
+        TrajectorySequence toBoardFromLeftTraj = drive.trajectorySequenceBuilder(startPose)
+                .back(toBoardFromLeft)
+                .build();
+
+        // Set dontHitTheRiggingTraj to got forward dontHitTheRigging
+        TrajectorySequence dontHitTheRiggingTraj = drive.trajectorySequenceBuilder(startPose)
+                .forward(dontHitTheRigging)
+                .build();
+
+        // Set toBoardFromRightTraj to go back to board
+        TrajectorySequence toBoardFromRightTraj = drive.trajectorySequenceBuilder(startPose)
+                .back(toBoardFromRight)
+                .build();
+
+        // Set 180Traj to go forward to board
+        TrajectorySequence Traj180 = drive.trajectorySequenceBuilder(startPose)
+                .turn(Math.toRadians(Angle180))
+                .build();
+
+        // Set toPixelforLeft to back backFromPixel
+        TrajectorySequence toPixelforLeft = drive.trajectorySequenceBuilder(startPose)
+                .forward(backFromPixel)
+                .build();
+
+        // Set BackFromPixel to back backFromPixel
+        TrajectorySequence BackFromPixel = drive.trajectorySequenceBuilder(startPose)
+                .back(backFromPixel)
                 .build();
 
         // State initialization sequence is completed
@@ -98,6 +166,10 @@ public class distanceBasedAuto extends LinearOpMode {
         // Wait for the game to start (driver presses PLAY)
         side = "Left";
         waitForStart();
+
+        // Squeeze Pixels
+        gripServo1.setPosition(1);
+        gripServo2.setPosition(0);
 
         // Update Telemetry
         telemetry.addData("Side", side);
@@ -117,26 +189,76 @@ public class distanceBasedAuto extends LinearOpMode {
             telemetry.addData("Side", side);
             telemetry.addData("Distance Front", distanceFront.getDistance(DistanceUnit.INCH));
             telemetry.update();
+            // Place Pixel then turn back and go to board
+            drive.followTrajectorySequence(trajectory3b);
+            sleep(700);
+            armServo.setPosition(0.13);
+            sleep(1100);
+            gripServo2.setPosition(1);
+            sleep(700);
+            drive.followTrajectorySequence(BackFromPixel);
+            sleep(700);
+            armServo.setPosition(1);
+            sleep(700);
+            drive.followTrajectorySequence(turnAngleZ);
+            drive.followTrajectorySequence(toBoardFromCenterTraj);
+        } else {
+            // Turn Right
+            drive.followTrajectorySequence(turnAngleW);
+
+            // Wait for Robot to settle
+            sleep(1000);
+
+            // If senses right, update telemetry and set side
+            if (distanceFrontLeft.getDistance(DistanceUnit.INCH) < 10) {
+                side = "Right";
+                telemetry.addData("Side", side);
+                telemetry.addData("Distance Front", distanceFront.getDistance(DistanceUnit.INCH));
+                telemetry.update();
+
+                // If Right drop Pixel
+                armServo.setPosition(0.13);
+                sleep(1100);
+                gripServo2.setPosition(1);
+                sleep(700);
+                drive.followTrajectorySequence(BackFromPixel);
+                sleep(700);
+                armServo.setPosition(1);
+                sleep(700);
+
+                // Strafe Right to Avoid Pixel
+                drive.followTrajectorySequence(trajectory3);
+                // #dontHitTheRiggingTraj
+                drive.followTrajectorySequence(dontHitTheRiggingTraj);
+                // Turn 180
+                drive.followTrajectorySequence(Traj180);
+                // Go back to Board
+                drive.followTrajectorySequence(toBoardFromRightTraj);
+            } else {
+                // If Left 180; Wait, Drop Pixel, wait; 180
+                drive.followTrajectorySequence(Traj180);
+                drive.followTrajectorySequence(trajectory3c);
+                sleep(700);
+                armServo.setPosition(0.13);
+                sleep(1100);
+                gripServo2.setPosition(1);
+                sleep(700);
+                drive.followTrajectorySequence(BackFromPixel);
+                sleep(700);
+                armServo.setPosition(1);
+                sleep(700);
+                drive.followTrajectorySequence(toBoardFromLeftTraj);
+            }
         }
+        // End Place Purple Pixel Sequence -->  Start Place Yellow Pixel Sequence
 
-        // Turn Right
-        drive.followTrajectorySequence(trajectory2);
-
-        // Wait for Robot to settle
-        sleep(1000);
-
-        // If senses right, update telemetry and set side
-        if (distanceFrontLeft.getDistance(DistanceUnit.INCH) < 10) {
-            side = "Right";
-            telemetry.addData("Side", side);
-            telemetry.addData("Distance Front", distanceFront.getDistance(DistanceUnit.INCH));
-            telemetry.update();
-        }
+        // End Place Yellow Pixel Sequence
 
         // Read Data to Screen
         while (opModeIsActive()) {
             telemetry.addData("Side", side);
             telemetry.addData("Distance Front", distanceFront.getDistance(DistanceUnit.INCH));
+            telemetry.addData("TODO:", "Place Pixel Code!!!");
             telemetry.update();
         }
     }
