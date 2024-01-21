@@ -2,13 +2,13 @@ package org.firstinspires.ftc.teamcode;
 
 import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.roadrunner.geometry.Pose2d;
+import com.acmerobotics.roadrunner.geometry.Vector2d;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DistanceSensor;
 import com.qualcomm.robotcore.hardware.Servo;
-import com.qualcomm.robotcore.hardware.TouchSensor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
@@ -16,36 +16,34 @@ import org.firstinspires.ftc.teamcode.drive.SampleMecanumDrive;
 import org.firstinspires.ftc.teamcode.trajectorysequence.TrajectorySequence;
 
 @Config
-@Autonomous(name = "Distance Based Auto")
-public class distanceBasedAuto extends LinearOpMode {
+@Autonomous(name = "Red Backdrop v27")
+public class autoRedBackdrop extends LinearOpMode {
     public static double DISTANCE_FROM_BACKBOARD = 6;
-    public static double armP = 0.004;
+    public static double armP = 0.002;
     public static double armI = 0;
-    public static double armD = 0.4;
+    public static double armD = 0.2;
     public double integralSummation = 0;
     public double lastError = 0;
-    public static double position = -220;
+    public static double position = -270;
     public static double positionb = -10;
     public static double W = -1;
     public static double Z = 1;
     public static double Public_Angle = 90;
-    public static double centerOffset = 7 * Z;
-    public static double CenterOffsetDeg = 23 * Z;
+    public static double centerOffset = 15 * Z;
+    public static double CenterOffsetDeg = 40 * Z;
     public static double rightOffset = 3 * Z;
-    public static double rightOffsetDeg = 5 * Z;
-    public static double leftOffset = 7 * Z;
+    public static double rightOffsetDeg = -10 * Z;
+    public static double leftOffset = -7 * Z;
     public static double leftOffsetDeg = 23 * W;
-    private double angleW = Public_Angle * W;
     private double angleZ = Public_Angle * Z;
-    public static double distanceForward = 28;
+    public static double distanceForward = 29;
     public static double backFromPixel = 5;
-    public static double strafeRight = 10;
+    public static double strafeRight = 10 * Z;
     public static double strafeRightB = 8 * Z;
-    public static double strafeRightC = 3 * Z;
     public static double toBoardFromCenter = 30;
     public static double toBoardFromLeft = 30;
     public static double dontHitTheRigging = 20;
-    public static double toBoardFromRight = 20;
+    public static double toBoardFromRight = 15;
     public static double Angle180 = 180;
     private DcMotor motor1 = null; // Front Right
     private DcMotor motor2 = null; // Front Left
@@ -60,8 +58,6 @@ public class distanceBasedAuto extends LinearOpMode {
     private Servo shoota = null; // Shooter Servo
     private DistanceSensor distanceBack = null; // Distance sensor on the back
     private DistanceSensor distanceFront = null; // Distance Sensor Front
-    private DistanceSensor distanceFrontLeft = null; // Distance Sensor Front Left
-    private TouchSensor armHit = null; // Arm Touch Sensor
     public String side = "Left";
     ElapsedTime timer = new ElapsedTime();
     boolean stopPower = false;
@@ -70,7 +66,7 @@ public class distanceBasedAuto extends LinearOpMode {
 
     @Override
     public void runOpMode() throws InterruptedException {
-        distanceBack = hardwareMap.get(DistanceSensor.class, "distanceBack");
+//        distanceBack = hardwareMap.get(DistanceSensor.class, "distanceBack");
 
         // Control Hub Motors
         motor1 = hardwareMap.get(DcMotor.class, "motor1");
@@ -84,27 +80,24 @@ public class distanceBasedAuto extends LinearOpMode {
         winchHex = hardwareMap.get(DcMotorEx.class, "rightEncoder");
 
         // Control Hub Servos
-        gripServo1 = hardwareMap.get(Servo.class, "grip1");
-        gripServo2 = hardwareMap.get(Servo.class, "grip2");
+        gripServo2 = hardwareMap.get(Servo.class, "grip1");
+        gripServo1 = hardwareMap.get(Servo.class, "grip2");
         armServo = hardwareMap.get(Servo.class, "arm");
         shoota = hardwareMap.get(Servo.class, "shooter");
 
         // Control Hub I2C
         distanceFront = hardwareMap.get(DistanceSensor.class, "distanceFront");
-        distanceFrontLeft = hardwareMap.get(DistanceSensor.class, "frontLeft");
-        armHit = hardwareMap.get(TouchSensor.class, "armHit");
+        distanceBack = hardwareMap.get(DistanceSensor.class, "distanceBack");
 
         // Change The Left side to Backwards on Drive Motors
         motor1.setDirection(DcMotor.Direction.FORWARD);
         motor2.setDirection(DcMotor.Direction.REVERSE);
         motor3.setDirection(DcMotor.Direction.REVERSE);
-        motor4.setDirection(DcMotor.Direction.REVERSE);
+        motor4.setDirection(DcMotor.Direction.FORWARD);
 
         // Set Core Hex Motor Direction, Mode, and Breaking
-        leftHex.setDirection(DcMotorEx.Direction.REVERSE);
-        rightHex.setDirection(DcMotorEx.Direction.FORWARD);
-        leftHex.setZeroPowerBehavior(DcMotorEx.ZeroPowerBehavior.BRAKE);
-        rightHex.setZeroPowerBehavior(DcMotorEx.ZeroPowerBehavior.BRAKE);
+        leftHex.setDirection(DcMotorEx.Direction.FORWARD);
+        rightHex.setDirection(DcMotorEx.Direction.REVERSE);
 
         // Set Drive Constants
         SampleMecanumDrive drive = new SampleMecanumDrive(hardwareMap);
@@ -126,18 +119,28 @@ public class distanceBasedAuto extends LinearOpMode {
                 .build();
 
         // Set Trajectory 1 to go forward
+        TrajectorySequence strafeOutOfWay = drive.trajectorySequenceBuilder(startPose)
+                .strafeLeft(25)
+                .build();
+
+        // Set Trajectory 1 to go forward
         TrajectorySequence trajectory66 = drive.trajectorySequenceBuilder(startPose)
                 .forward(5)
                 .build();
 
         // Set turnAngleW to turn W
         TrajectorySequence turnAngleW = drive.trajectorySequenceBuilder(startPose)
-                .turn(Math.toRadians(angleW))
+                .turn(Math.toRadians(-75))
                 .build();
 
         // Set turnAngleZ to turn Z
         TrajectorySequence turnAngleZ = drive.trajectorySequenceBuilder(startPose)
                 .turn(Math.toRadians(angleZ))
+                .build();
+
+        // Set turnAngleZ to turn Z
+        TrajectorySequence turnAngleCenter = drive.trajectorySequenceBuilder(startPose)
+                .turn(Math.toRadians(90))
                 .build();
 
         // Set Trajectory 3 to strafe right
@@ -150,9 +153,29 @@ public class distanceBasedAuto extends LinearOpMode {
                 .strafeRight(strafeRightB)
                 .build();
 
+        // Set Trajectory 3 to strafe right
+        TrajectorySequence trajectory3dba = drive.trajectorySequenceBuilder(startPose)
+                .strafeRight(10)
+                .build();
+
+        // Set Trajectory 3 to strafe right
+        TrajectorySequence trajectory3dbb = drive.trajectorySequenceBuilder(startPose)
+                .strafeLeft(10)
+                .build();
+
+        // Set Trajectory 3 to strafe right
+        TrajectorySequence trajectory3bb = drive.trajectorySequenceBuilder(startPose)
+                .strafeLeft(strafeRightB)
+                .build();
+
         // Set Trajectory 3c to strafe right
         TrajectorySequence trajectory3c = drive.trajectorySequenceBuilder(startPose)
-                .strafeRight(strafeRightC)
+                .strafeLeft(5)
+                .build();
+
+        // Set Trajectory 3c to strafe right
+        TrajectorySequence trajectory3cb = drive.trajectorySequenceBuilder(startPose)
+                .strafeRight(10)
                 .build();
 
         // Set toBoardFromCenterTraj to go back to board
@@ -177,7 +200,22 @@ public class distanceBasedAuto extends LinearOpMode {
 
         // Set 180Traj to go forward to board
         TrajectorySequence Traj180 = drive.trajectorySequenceBuilder(startPose)
-                .turn(Math.toRadians(Angle180))
+                .turn(Math.toRadians(160))
+                .build();
+
+        // Set 180Traj to go forward to board
+        TrajectorySequence Traj170 = drive.trajectorySequenceBuilder(startPose)
+                .turn(Math.toRadians(-185))
+                .build();
+
+        // Crazy Spline
+        TrajectorySequence CrazyStrafea = drive.trajectorySequenceBuilder(startPose)
+                .strafeTo(new Vector2d(-25, 20)) // Forward Right
+                .build();
+
+        // Crazy Spline
+        TrajectorySequence CrazyStrafeb = drive.trajectorySequenceBuilder(startPose)
+                .strafeTo(new Vector2d(-18, -15))
                 .build();
 
         // Set toPixelforLeft to back backFromPixel
@@ -246,7 +284,7 @@ public class distanceBasedAuto extends LinearOpMode {
         drive.followTrajectorySequence(trajectory1);
 
         // Wait for Robot to settle
-        sleep(1000);
+        sleep(500);
 
         // If senses center, update telemetry and set side
         if (distanceFront.getDistance(DistanceUnit.INCH) < 10) {
@@ -257,20 +295,29 @@ public class distanceBasedAuto extends LinearOpMode {
             telemetry.addData("Pos", leftHex.getCurrentPosition());
             telemetry.update();
             // Place Pixel then turn back and go to board
+            //strafe right
             drive.followTrajectorySequence(trajectory3b);
             sleep(700);
+
+            //move arm down
             armServo.setPosition(0);
             sleep(1100);
+
+            //open purple side
             gripServo2.setPosition(1);
             sleep(700);
+
+            //back up
             drive.followTrajectorySequence(BackFromPixel);
             sleep(700);
-            armServo.setPosition(0.7);
-            sleep(700);
-            drive.followTrajectorySequence(turnAngleZ);
+
+            //bring arm up
+            armServo.setPosition(0.6);
+
+            //turn towards board
+            drive.followTrajectorySequence(turnAngleCenter); // Turn Left
             drive.followTrajectorySequence(toBoardFromCenterTraj);
-            drive.followTrajectorySequence(CenterBoardTrajA);
-            drive.followTrajectorySequence(CenterBoardTrajB);
+//            drive.followTrajectorySequence(CenterBoardTrajB);
         } else {
             // Turn Right
             drive.followTrajectorySequence(turnAngleW);
@@ -279,35 +326,33 @@ public class distanceBasedAuto extends LinearOpMode {
             sleep(1000);
 
             // If senses right, update telemetry and set side
-            if (distanceFrontLeft.getDistance(DistanceUnit.INCH) < 10) {
+            if (distanceFront.getDistance(DistanceUnit.INCH) < 10) {
                 side = "Right";
                 telemetry.addData("Side", side);
                 telemetry.addData("Distance Front", distanceFront.getDistance(DistanceUnit.INCH));
                 telemetry.addData("Pos", leftHex.getCurrentPosition());
                 telemetry.update();
 
+                // Move to Right
+                drive.followTrajectorySequence(trajectory3dba);
+                sleep(700);
+
                 // If Right drop Pixel
                 armServo.setPosition(0);
                 sleep(1100);
+                drive.followTrajectorySequence(trajectory3dbb);
+                sleep(700);
                 gripServo2.setPosition(1);
                 sleep(700);
                 drive.followTrajectorySequence(BackFromPixel);
-                sleep(700);
-                armServo.setPosition(0.7);
-                sleep(700);
-                drive.followTrajectorySequence(trajectory66);
-
-                // Strafe Right to Avoid Pixel
-                drive.followTrajectorySequence(trajectory3);
-                // #dontHitTheRiggingTraj
-                drive.followTrajectorySequence(dontHitTheRiggingTraj);
+                sleep(500);
+                armServo.setPosition(0.6);
                 // Turn 180
-                drive.followTrajectorySequence(Traj180);
-                drive.followTrajectorySequence(RightBoardTrajA);
-                // Go back to Board
-                drive.followTrajectorySequence(toBoardFromRightTraj);
+                drive.followTrajectorySequence(Traj170);
+                drive.followTrajectorySequence(CrazyStrafea);
+                drive.followTrajectorySequence(CrazyStrafeb);
                 // Center on Right side of Board RightBoardTrajB
-                drive.followTrajectorySequence(RightBoardTrajB);
+//                drive.followTrajectorySequence(RightBoardTrajB);
             } else {
                 // If Left 180; Wait, Drop Pixel, wait; 180
                 drive.followTrajectorySequence(Traj180);
@@ -315,85 +360,114 @@ public class distanceBasedAuto extends LinearOpMode {
                 sleep(700);
                 armServo.setPosition(0);
                 sleep(1100);
+                drive.followTrajectorySequence(trajectory3cb);
                 gripServo2.setPosition(1);
                 sleep(700);
                 drive.followTrajectorySequence(BackFromPixel);
                 sleep(700);
-                armServo.setPosition(0.7);
+                armServo.setPosition(0.6);
                 sleep(700);
                 drive.followTrajectorySequence(LeftBoardTrajA);
                 drive.followTrajectorySequence(toBoardFromLeftTraj);
-                drive.followTrajectorySequence(LeftBoardTrajB);
             }
         }
-        // End Place Purple Pixel Sequence -->  Start Place Yellow Pixel Sequence
 
-        // End Place Yellow Pixel Sequence
+        // Move toward the Board
+        while(!toBoard && opModeIsActive()){
 
-        // Read Data to Screen
-        while (opModeIsActive()) {
-            if (!toBoard) {
-                double power = -0.75*((0.6*Math.log10(distanceBack.getDistance(DistanceUnit.INCH)-DISTANCE_FROM_BACKBOARD))+0.2);
-                if ((distanceBack.getDistance(DistanceUnit.INCH) > (DISTANCE_FROM_BACKBOARD-0.4)) && (distanceBack.getDistance(DistanceUnit.INCH) < (DISTANCE_FROM_BACKBOARD+0.4))) {
-                    toBoard = true;
-                } else if (distanceBack.getDistance(DistanceUnit.INCH) < DISTANCE_FROM_BACKBOARD) {
-                    motor1.setPower(0.1);
-                    motor2.setPower(0.1);
-                    motor3.setPower(0.1);
-                    motor4.setPower(0.1);
-                } else if (power < 0) {
-                    motor1.setPower(power);
-                    motor2.setPower(power);
-                    motor3.setPower(power);
-                    motor4.setPower(power);
-                }
-                telemetry.addData("Distance (inch)", distanceBack.getDistance(DistanceUnit.INCH));
-                telemetry.addData("Pos", leftHex.getCurrentPosition());
-                telemetry.update();
-            } else {
-                motor1.setPower(0);
-                motor2.setPower(0);
-                motor3.setPower(0);
-                motor4.setPower(0);
-                if (!stopPower) {
-                    telemetry.addData("Status", "Putting Pixel on Board");
-                    telemetry.addData("Pos", leftHex.getCurrentPosition());
-                    telemetry.update();
-                    double power = pidController(position, leftHex.getCurrentPosition());
-                    if (((position + 30) > leftHex.getCurrentPosition()) && (leftHex.getCurrentPosition() > position - 30)) {
-                        stopPower = true;
-                    }
-                    leftHex.setPower(power);
-                    rightHex.setPower(power);
-                } else {
-                    leftHex.setPower(0);
-                    rightHex.setPower(0);
-                    gripServo1.setPosition(0);
-                    if (!stopPowerb) {
-                        telemetry.addData("Status", "Main Loop");
-                        telemetry.update();
-                        double power = pidController(positionb, leftHex.getCurrentPosition());
-                        if (((positionb + 30) > leftHex.getCurrentPosition()) && (leftHex.getCurrentPosition() > positionb - 30)) {
-                            stopPowerb = true;
-                        }
-                        leftHex.setPower(power);
-                        rightHex.setPower(power);
-                    } else {
-                        leftHex.setPower(0);
-                        rightHex.setPower(0);
-                    }
+            // Set Power to Motors Based on Log Func
+            double power = -0.50 * ((0.6 * Math.log10(distanceBack.getDistance(DistanceUnit.INCH) - DISTANCE_FROM_BACKBOARD)) + 0.2);
 
-                }
-                telemetry.addData("Current Pos", leftHex.getCurrentPosition());
-                telemetry.update();
+            // Set Distance to Board Var for Easy Access
+            double distance_to_board = distanceBack.getDistance(DistanceUnit.INCH);
+
+            // Check if within tolerable distance to board
+            if (distance_to_board < (DISTANCE_FROM_BACKBOARD + 0.4)) {
+                // If tolerable, break out of loop
+                toBoard = true;
+                break;
             }
+
+            if (power < 0) {
+                motor1.setPower(power);
+                motor2.setPower(power);
+                motor3.setPower(power);
+                motor4.setPower(power);
+            }
+
+            // Telemetry
+            telemetry.addData("Distance (inch)", distance_to_board);
+            telemetry.addData("Pos", leftHex.getCurrentPosition());
+            telemetry.update();
         }
+
+        // Stop Moving Base
+        motor1.setPower(0);
+        motor2.setPower(0);
+        motor3.setPower(0);
+        motor4.setPower(0);
+
+        // move arm towards board
+        while(!stopPower && opModeIsActive()){
+            // Set Variables for easy access
+            double power = pidController(position, leftHex.getCurrentPosition());
+            double arm_position = leftHex.getCurrentPosition();
+
+            // Check if within tolerable arm position
+            if ((arm_position < (position + 30)) && (arm_position > (position - 30))) {
+                // Break out of loop if tolerable position
+                stopPower = true;
+                break;
+            }
+
+            // Set power to hex motors
+            leftHex.setPower(power);
+            rightHex.setPower(power);
+        }
+
+        // Stop arm
+        leftHex.setPower(0);
+        rightHex.setPower(0);
+        sleep(1000);
+
+        // drop pixels
+        gripServo1.setPosition(0);
+
+        sleep(1000);
+
+        // Move Arm back down
+        while (opModeIsActive() && !stopPowerb) {
+            telemetry.addData("Status", "Moving Arm Back Down...");
+            telemetry.addData("Current Pos", leftHex.getCurrentPosition());
+            telemetry.update();
+            double power = pidController(positionb, leftHex.getCurrentPosition());
+            if (((positionb + 30) > leftHex.getCurrentPosition()) && (leftHex.getCurrentPosition() > positionb - 30)) {
+                stopPowerb = true;
+            }
+            leftHex.setPower(power);
+            rightHex.setPower(power);
+        }
+
+        // Stop Arm Again
+        leftHex.setPower(0);
+        rightHex.setPower(0);
+
+        // Put wrist down
+        armServo.setPosition(0);
+
+        // Strafe Left 20
+        drive.followTrajectorySequence(strafeOutOfWay);
     }
     public double pidController(double reference, double state) {
+        // Calculate error
         double error = reference - state;
+        // Based on error add to the Integral Summation
         integralSummation += error * timer.seconds();
+        // Calculate the Derivative of the error
         double derivative = (error - lastError) / timer.seconds();
+        // Set the last error to the current error
         lastError = error;
+        // Return power output based off of the PID Constants
         return (error * armP) + (derivative * armD) + (integralSummation * armI);
     }
 }

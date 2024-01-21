@@ -1,9 +1,9 @@
 package org.firstinspires.ftc.teamcode;
 
 import com.acmerobotics.dashboard.FtcDashboard;
-import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
@@ -14,16 +14,16 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 
-@Config
+@Disabled
 @Autonomous(name="ArmPIDTuner")
 public class armPIDTuner extends LinearOpMode {
     public static double DISTANCE_FROM_BACKBOARD = 8.7;
-    public static double armP = 0.004;
+    public static double armP = 0.002;
     public static double armI = 0;
-    public static double armD = 0.4;
+    public static double armD = 0.2;
     public double integralSummation = 0;
     public double lastError = 0;
-    public static double position = -300;
+    public static double position = -275;
 
 
     private DcMotorEx leftHex = null; // Left Hex
