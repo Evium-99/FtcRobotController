@@ -318,7 +318,7 @@ public class autoRedAudiance extends LinearOpMode {
             }
         }
 
-        armServo.setPosition(0.8);
+        armServo.setPosition(0.94);
 
         while(!toBoard && opModeIsActive()){
 
@@ -353,7 +353,7 @@ public class autoRedAudiance extends LinearOpMode {
             sleep(1000);
             gripServo2.setPosition(0);
             sleep(1000);
-            armServo.setPosition(0.5);
+            armServo.setPosition(0.94);
             drive.followTrajectorySequence(BackFromPixelXS);
         } else {
             drive.followTrajectorySequence(ST84);
@@ -361,7 +361,7 @@ public class autoRedAudiance extends LinearOpMode {
             sleep(1000);
             gripServo2.setPosition(0);
             sleep(1000);
-            armServo.setPosition(0.5);
+            armServo.setPosition(0.94);
             drive.followTrajectorySequence(BackFromPixelXS);
         }
     }

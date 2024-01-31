@@ -233,7 +233,7 @@ public class autoBlueAudiance extends LinearOpMode {
                 sleep(700);
                 gripServo2.setPosition(1);
                 sleep(700);
-                armServo.setPosition(0.8);
+                armServo.setPosition(0.94);
                 sleep(500);
                 drive.followTrajectorySequence(turnAngleP);
             } else {
@@ -246,12 +246,12 @@ public class autoBlueAudiance extends LinearOpMode {
                 sleep(700);
                 drive.followTrajectorySequence(BackFromPixel); // Back
                 sleep(700);
-                armServo.setPosition(0.8);
+                armServo.setPosition(0.94);
                 sleep(700);
                 drive.followTrajectorySequence(turnAngleG);
             }
         }
-        armServo.setPosition(0.8);
+        armServo.setPosition(0.94);
         while(!toBoard && opModeIsActive()){
 
             // Set Power to Motors Based on Log Func

@@ -9,7 +9,6 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DistanceSensor;
 import com.qualcomm.robotcore.hardware.Servo;
-import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
@@ -21,15 +20,7 @@ public class Evium23 extends LinearOpMode {
 
     // Proportional, Integral, and Derivative Gains and Integral Summation for PID Controller
     // for the armature ran off of hex motor.
-    public static double armP = 0.0025;
-    public static double armI = 0;
-    public static double armD = 0.2;
-    public double integralSummation = 0;
-    public double lastError = 0;
-    public static int position = 0;
-    static int lastPosition = position;
-    ElapsedTime timer = new ElapsedTime();
-    public static double DISTANCE_FROM_BACKBOARD = 8.5;
+    public static double DISTANCE_FROM_BACKBOARD = 11;
 
     private boolean gamepad1AReleased = true; // Check if A is Released
     private boolean gamepad1XReleased = true; // Check if X is Released
@@ -57,11 +48,11 @@ public class Evium23 extends LinearOpMode {
         // Control Hub Servos
         Servo gripServo1 = hardwareMap.get(Servo.class, "grip1");
         Servo gripServo2 = hardwareMap.get(Servo.class, "grip2");
+        Servo wristServo = hardwareMap.get(Servo.class, "arm");
         Servo shoota = hardwareMap.get(Servo.class, "shooter");
 
         // Control Hub I2C
         DistanceSensor distanceBack = hardwareMap.get(DistanceSensor.class, "distanceBack");
-        DistanceSensor distanceFront = hardwareMap.get(DistanceSensor.class, "distanceFront");
 
         // Change The Left side to Backwards on Drive Motors
         motor1.setDirection(DcMotor.Direction.FORWARD);
@@ -77,41 +68,27 @@ public class Evium23 extends LinearOpMode {
         leftHex.setMode(DcMotorEx.RunMode.RUN_USING_ENCODER);
         rightHex.setMode(DcMotorEx.RunMode.RUN_USING_ENCODER);
 
-        // Arm Motor
-        DcMotorEx armMotor = hardwareMap.get(DcMotorEx.class, "wristMotor");
+        boolean gamepad1StartReleased = true;
+        int armCycle = 0;
+        double servoOffset = 0;
 
         // Wait for the game to start (driver presses PLAY)
         waitForStart();
-        timer.reset();
-        armMotor.setPower(0.5);
-        sleep(1000);
-        armMotor.setMode(DcMotorEx.RunMode.STOP_AND_RESET_ENCODER);
-        armMotor.setPower(0);
-        armMotor.setMode(DcMotorEx.RunMode.RUN_USING_ENCODER);
-        sleep(500);
 
         // Auto Close
         gripServo1.setPosition(0);
         gripServo2.setPosition(1);
         shoota.setPosition(0);
 
-        boolean gamepad1StartReleased = true;
-        int armCycle = 0;
-
-
         // run until the end of the match (driver presses STOP)
         while (opModeIsActive()) {
             double y;
             double x;
             double rx;
-            if (gamepad1.right_bumper) {
+            if (gamepad1.left_bumper) {
                 y = 0.5 * ((-gamepad1.left_stick_y*0.8) + (Math.pow(-gamepad1.left_stick_y, 3)*0.2)); // Remember, Y stick value is reversed
                 x = 0.5 * ((gamepad1.left_stick_x*0.8) + (Math.pow(gamepad1.left_stick_x, 3)*0.2)); // Counteract imperfect strafing
                 rx = 0.5 * ((gamepad1.right_stick_x*0.8) + (Math.pow(gamepad1.right_stick_x, 3)*0.2));
-            } else if (gamepad1.left_bumper) {
-                y = Math.pow(gamepad1.left_stick_y, 3); // Remember, Y stick value is reversed
-                x = Math.pow(-gamepad1.left_stick_x, 3); // Counteract imperfect strafing
-                rx = Math.pow(-gamepad1.right_stick_x, 3);
             } else {
                 y = (-gamepad1.left_stick_y*0.5) + (Math.pow(-gamepad1.left_stick_y, 9)*0.5); // Remember, Y stick value is reversed
                 x = (gamepad1.left_stick_x*0.5) + (Math.pow(gamepad1.left_stick_x, 9)*0.5); // Counteract imperfect strafing
@@ -198,17 +175,31 @@ public class Evium23 extends LinearOpMode {
             }
 
             // Arm Servo
+            if (gamepad1.back) {
+                if (gamepad1.dpad_up) {
+                    servoOffset = servoOffset + 0.01;
+                } else if (gamepad1.dpad_down) {
+                    servoOffset = servoOffset - 0.01;
+                }
+            } else {
+                if (gamepad1.dpad_up) {
+                    servoOffset = servoOffset + 0.001;
+                } else if (gamepad1.dpad_down) {
+                    servoOffset = servoOffset - 0.001;
+                }
+            }
             // Drive Threshold
             double speedThrech = 0.3;
 
             if (armCycle == 0) {
-                if ((!gamepad1.right_bumper) && ((y > speedThrech) || (y < -speedThrech) || (x > speedThrech) || (x < -speedThrech) || (rx > speedThrech) || (rx < -speedThrech))) {
-                    position = -40;
+                servoOffset = 0;
+                if (!gamepad1.left_bumper && ((y > speedThrech) || (y < -speedThrech) || (x > speedThrech) || (x < -speedThrech) || (rx > speedThrech) || (rx < -speedThrech))) {
+                    wristServo.setPosition(0.2);
                 } else {
-                    position = 5;
+                    wristServo.setPosition(0);
                 }
-            } else if (armCycle == 1) {
-                position = -150;
+            } else {
+                wristServo.setPosition(0.75 + servoOffset);
             }
             // gamepadBReleased
             if ((gamepadBReleased) && (gamepad1.b)) {
@@ -236,8 +227,8 @@ public class Evium23 extends LinearOpMode {
             if ((gamepad1StartReleased) && (gamepad2.start)) {
                 gamepad1StartReleased = false;
                 if (shoota.getPosition() == 0) {
-                    shoota.setPosition(1);
-                } else if (shoota.getPosition() == 1) {
+                    shoota.setPosition(0.5);
+                } else if (shoota.getPosition() == 0.5) {
                     shoota.setPosition(0);
                 } else {
                     shoota.setPosition(0);
@@ -261,12 +252,11 @@ public class Evium23 extends LinearOpMode {
                     motor4.setPower(power);
                 }
             }
-            if (lastPosition != position) {
-                integralSummation = 0;
-                timer.reset();
-            }
-            armMotor.setPower(pidController(position, armMotor.getCurrentPosition()));
             telemetry.addData("Arm Pos", leftHex.getCurrentPosition());
+            telemetry.addData("Gamepad1 Left Stick X", gamepad1.left_stick_x);
+            telemetry.addData("Gamepad1 Left Stick Y", gamepad1.left_stick_y);
+            telemetry.addData("Gamepad1 Right Stick X", gamepad1.right_stick_x);
+
             telemetry.addData("Back Distance Sensor (in)", distanceBack.getDistance(DistanceUnit.INCH));
             if (gripServo1.getPosition() != 1) {
                 telemetry.addData("Left Grip (A)", "Close");
@@ -283,29 +273,7 @@ public class Evium23 extends LinearOpMode {
             } else {
                 telemetry.addData("Wrist (B)", "Up");
             }
-            // position
-            telemetry.addData("Wrist Target", position);
-            telemetry.addData("Wrist Power", armMotor.getPower());
-            telemetry.addData("Wrist Position", armMotor.getCurrentPosition());
-            double error = position - armMotor.getCurrentPosition();
-            integralSummation = error * timer.seconds();
-            double derivative = (error - lastError) / timer.seconds();
-            telemetry.addData("Derivative", derivative * armD);
-            lastError = error;
-            telemetry.addData("Proportional", error * armP);
-            telemetry.addData("Integral", integralSummation * armI);
             telemetry.update();
-            lastPosition = position;
         }
-    }
-    public double pidController(double reference, double state) {
-        double error = reference - state;
-        integralSummation = error * timer.seconds();
-        double derivative = (error - lastError) / timer.seconds();
-        telemetry.addData("Derivative", derivative * armD);
-        lastError = error;
-        telemetry.addData("Proportional", error * armP);
-        telemetry.addData("Integral", integralSummation * armI);
-        return (error * armP) + (derivative * armD) + (integralSummation * armI);
     }
 }

@@ -16,7 +16,7 @@ import org.firstinspires.ftc.teamcode.drive.SampleMecanumDrive;
 import org.firstinspires.ftc.teamcode.trajectorysequence.TrajectorySequence;
 
 @Config
-@Autonomous(name = "Blue Backdrop v52")
+@Autonomous(name = "Blue Backdrop v54")
 public class autoBlueBackdrop extends LinearOpMode {
     public static double DISTANCE_FROM_BACKBOARD = 10;
     public static double armP = 0.0025;
@@ -25,32 +25,14 @@ public class autoBlueBackdrop extends LinearOpMode {
     public double integralSummation = 0;
     public double lastError = 0;
     public static double position = -270;
-    public static double positionb = -10;
-    public static double W = 1;
+    public static double positionb = -80;
     public static double Z = -1;
-    public static double Public_Angle = 90;
-    public static double CenterOffsetDeg = 12 * W;
     public static double rightOffset = 15 * Z;
     public static double rightOffsetDeg = 30 * Z;
-    public static double aSmidgeLeft = 10;
-    private static final double angleZ = Public_Angle * Z;
-    public static double distanceForward = 30;
-    public static double backFromPixel = 5;
+    public static double angleZ = -95;
+    public static double distanceForward = 30.5;
     public static double backFromPixelXS = 2.5;
-    public static double strafeRightG = 10 * W;
-    public static double strafeRightC = 24 * W;
-    public static double strafeLeftC = 16 * W;
     public static double toBoardFromCenter = 30;
-    // Back 13
-    public static double X_BBS_FORWARDa = 22;
-    // Strafe Left 15
-    private DcMotor leftHex = null; // Left Hex
-    private DcMotor rightHex = null; // Right Hex
-    private Servo gripServo1 = null; // Grip Servo 1
-    private Servo gripServo2 = null; // Grip Servo 2
-    private Servo armServo = null; // Arm Servo
-    private DistanceSensor distanceBack = null; // Distance sensor on the back
-    private DistanceSensor distanceFront = null; // Distance Sensor Front
     public String side = "Left";
     ElapsedTime timer = new ElapsedTime();
     boolean stopPower = false;
@@ -59,7 +41,8 @@ public class autoBlueBackdrop extends LinearOpMode {
 
     @Override
     public void runOpMode() throws InterruptedException {
-        distanceBack = hardwareMap.get(DistanceSensor.class, "distanceBack");
+        // Distance sensor on the back
+        DistanceSensor distanceBack = hardwareMap.get(DistanceSensor.class, "distanceBack");
 
         // Control Hub Motors
         // Front Right
@@ -69,16 +52,22 @@ public class autoBlueBackdrop extends LinearOpMode {
         DcMotor motor4 = hardwareMap.get(DcMotor.class, "motor4");
 
         // Expansion Hub Motors
-        leftHex = hardwareMap.get(DcMotor.class, "leftHex");
-        rightHex = hardwareMap.get(DcMotor.class, "rightHex");
+        // Left Hex
+        DcMotor leftHex = hardwareMap.get(DcMotor.class, "leftHex");
+        // Right Hex
+        DcMotor rightHex = hardwareMap.get(DcMotor.class, "rightHex");
 
         // Control Hub Servos
-        gripServo1 = hardwareMap.get(Servo.class, "grip1");
-        gripServo2 = hardwareMap.get(Servo.class, "grip2");
-        armServo = hardwareMap.get(Servo.class, "arm");
+        // Grip Servo 1
+        Servo gripServo1 = hardwareMap.get(Servo.class, "grip1");
+        // Grip Servo 2
+        Servo gripServo2 = hardwareMap.get(Servo.class, "grip2");
+        // Arm Servo
+        Servo armServo = hardwareMap.get(Servo.class, "arm");
 
         // Control Hub I2C
-        distanceFront = hardwareMap.get(DistanceSensor.class, "distanceFront");
+        // Distance Sensor Front
+        DistanceSensor distanceFront = hardwareMap.get(DistanceSensor.class, "distanceFront");
 
         // Set Core Hex Motor Direction, Mode, and Breaking
         leftHex.setDirection(DcMotorEx.Direction.FORWARD);
@@ -118,12 +107,12 @@ public class autoBlueBackdrop extends LinearOpMode {
 
         // Set Trajectory Strafe Right
         TrajectorySequence StrafeRightG = drive.trajectorySequenceBuilder(startPose)
-                .strafeTo(new Vector2d(2, -strafeRightG))
+                .strafeTo(new Vector2d(2, -10))
                 .build();
 
         // Set Trajectory Strafe Right
         TrajectorySequence StrafeRightO = drive.trajectorySequenceBuilder(startPose)
-                .strafeRight(-strafeRightG)
+                .strafeRight(-10)
                 .build();
 
         // Set Trajectory 3 to strafe right
@@ -164,11 +153,6 @@ public class autoBlueBackdrop extends LinearOpMode {
                 .back(backFromPixelXS)
                 .build();
 
-        // Set CenterBoardTrajA to Center
-        TrajectorySequence CenterBoardTrajA = drive.trajectorySequenceBuilder(startPose)
-                .turn(Math.toRadians(-CenterOffsetDeg))
-                .build();
-
         // Sat RightBoardTrajA to Right Side of Board
         TrajectorySequence RightBoardTrajA = drive.trajectorySequenceBuilder(startPose)
                 .turn(Math.toRadians(rightOffsetDeg))
@@ -178,10 +162,7 @@ public class autoBlueBackdrop extends LinearOpMode {
         TrajectorySequence RightBoardTrajB = drive.trajectorySequenceBuilder(startPose)
                 .strafeRight(rightOffset)
                 .build();
-        // Back 13
-        TrajectorySequence Traj_X_BBS_FORWARDa = drive.trajectorySequenceBuilder(startPose)
-                .back(X_BBS_FORWARDa)
-                .build();
+
         // Strafe Left 15
         TrajectorySequence Traj_X_BBS_LEFTb = drive.trajectorySequenceBuilder(startPose)
                 .strafeTo(new Vector2d(-5, 10))
@@ -189,7 +170,7 @@ public class autoBlueBackdrop extends LinearOpMode {
 
         // State initialization sequence is completed
         telemetry.addData("Status", "Initialized");
-        telemetry.addData("Pos", rightHex.getCurrentPosition());
+        telemetry.addData("Pos", leftHex.getCurrentPosition());
         telemetry.update();
 
         // Wait for the game to start (driver presses PLAY)
@@ -207,7 +188,7 @@ public class autoBlueBackdrop extends LinearOpMode {
         // Update Telemetry
         telemetry.addData("Side", side);
         telemetry.addData("Distance Front", distanceFront.getDistance(DistanceUnit.INCH));
-        telemetry.addData("Pos", rightHex.getCurrentPosition());
+        telemetry.addData("Pos", leftHex.getCurrentPosition());
         telemetry.update();
 
         // Move Away from Wall
@@ -222,7 +203,7 @@ public class autoBlueBackdrop extends LinearOpMode {
             // Update Telemetry
             telemetry.addData("Side", side);
             telemetry.addData("Distance Front", distanceFront.getDistance(DistanceUnit.INCH));
-            telemetry.addData("Pos", rightHex.getCurrentPosition());
+            telemetry.addData("Pos", leftHex.getCurrentPosition());
             telemetry.update();
             // Place Pixel then turn back and go to board
             //strafe left
@@ -248,9 +229,8 @@ public class autoBlueBackdrop extends LinearOpMode {
 
             //turn towards board
             drive.followTrajectorySequence(turnAngleZ); // Turn Right
-            drive.followTrajectorySequence(toBoardFromCenterTraj);
-            drive.followTrajectorySequence(CenterBoardTrajA);
-            drive.followTrajectorySequence(trajectory3b);
+            drive.followTrajectorySequence(toBoardFromCenterTraj); // Back up
+//            drive.followTrajectorySequence(trajectory3b);  // Move Left
         } else {
             telemetry.addData("Distance Front", distanceFront.getDistance(DistanceUnit.INCH));
             // Turn Right
@@ -264,18 +244,19 @@ public class autoBlueBackdrop extends LinearOpMode {
                 side = "Right";
                 telemetry.addData("Side", side);
                 telemetry.addData("Distance Front", distanceFront.getDistance(DistanceUnit.INCH));
-                telemetry.addData("Pos", rightHex.getCurrentPosition());
+                telemetry.addData("Pos", leftHex.getCurrentPosition());
                 telemetry.update();
 
                 drive.followTrajectorySequence(StrafeRightG);
-                armServo.setPosition(0);
+                armServo.setPosition(0.2);
                 sleep(700);
                 drive.followTrajectorySequence(StrafeRightO);
+                armServo.setPosition(0);
                 sleep(700);
                 gripServo1.setPosition(1);
-                sleep(500);
-                drive.followTrajectorySequence(BackFromPixelMega);
+                sleep(200);
                 armServo.setPosition(0.6);
+                drive.followTrajectorySequence(BackFromPixelMega);
                 drive.followTrajectorySequence(RightBoardTrajA);
                 // Center on Right side of Board RightBoardTrajB
                 drive.followTrajectorySequence(RightBoardTrajB);
@@ -319,7 +300,7 @@ public class autoBlueBackdrop extends LinearOpMode {
 
             // Telemetry
             telemetry.addData("Distance (inch)", distance_to_board);
-            telemetry.addData("Pos", rightHex.getCurrentPosition());
+            telemetry.addData("Pos", leftHex.getCurrentPosition());
             telemetry.update();
         }
 
@@ -368,7 +349,7 @@ public class autoBlueBackdrop extends LinearOpMode {
             telemetry.addData("Current Pos", leftHex.getCurrentPosition());
             telemetry.update();
             double power = pidController(positionb, leftHex.getCurrentPosition());
-            if (((positionb + 30) > leftHex.getCurrentPosition()) && (leftHex.getCurrentPosition() > positionb - 30)) {
+            if (positionb < leftHex.getCurrentPosition()) {
                 stopPowerb = true;
             }
             leftHex.setPower(power);
