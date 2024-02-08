@@ -83,7 +83,6 @@ public class autoRedBackdrop extends LinearOpMode {
 
         // Set Drive Constants
         SampleMecanumDrive drive = new SampleMecanumDrive(hardwareMap);
-        drive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
         // Set Hex Mode
         leftHex.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
