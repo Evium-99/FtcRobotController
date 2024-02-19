@@ -13,10 +13,8 @@ import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.teamcode.drive.SampleMecanumDrive;
 import org.firstinspires.ftc.teamcode.trajectorysequence.TrajectorySequence;
 
-import java.util.Objects;
-
 @Config
-@Autonomous(name = "Blue Audiance v19")
+@Autonomous(name = "Audience Blue")
 public class autoBlueAudiance extends LinearOpMode {
     public static double DISTANCE_FROM_BACKBOARD = 3;
     public static double position = -270;
@@ -33,9 +31,7 @@ public class autoBlueAudiance extends LinearOpMode {
     private Servo gripServo1 = null; // Grip Servo 1
     private Servo gripServo2 = null; // Grip Servo 2
     private Servo armServo = null; // Arm Servo
-    private DistanceSensor distanceBack = null; // Distance sensor on the back
-    private DistanceSensor distanceFront = null; // Distance Sensor Front
-    public String side = "Left";
+    public String side;
     boolean toBoard = false;
 
     @Override
@@ -57,9 +53,14 @@ public class autoBlueAudiance extends LinearOpMode {
         armServo = hardwareMap.get(Servo.class, "arm");
 
         // Control Hub I2C
-        distanceFront = hardwareMap.get(DistanceSensor.class, "distanceFront");
-        distanceBack = hardwareMap.get(DistanceSensor.class, "distanceBack");
-
+        // Distance Sensor Front
+        DistanceSensor distanceFront = hardwareMap.get(DistanceSensor.class, "distanceFront");
+        // Distance sensor on the back
+        DistanceSensor distanceBack = hardwareMap.get(DistanceSensor.class, "distanceBack");
+        // Distance sensor on the right
+        DistanceSensor distanceRight = hardwareMap.get(DistanceSensor.class, "distanceRight");
+        // Distance sensor on the left
+        DistanceSensor distanceLeft = hardwareMap.get(DistanceSensor.class, "distanceLeft");
         // Change The Left side to Backwards on Drive Motors
         motor1.setDirection(DcMotor.Direction.FORWARD);
         motor2.setDirection(DcMotor.Direction.REVERSE);
@@ -105,6 +106,11 @@ public class autoBlueAudiance extends LinearOpMode {
                 .build();
 
         // Set turnAngleW to turn W
+        TrajectorySequence turnAngleJ = drive.trajectorySequenceBuilder(startPose)
+                .turn(Math.toRadians(75))
+                .build();
+
+        // Set turnAngleW to turn W
         TrajectorySequence turnAngleG = drive.trajectorySequenceBuilder(startPose)
                 .turn(Math.toRadians(-115))
                 .build();
@@ -139,13 +145,13 @@ public class autoBlueAudiance extends LinearOpMode {
                 .build();
 
         // Set Trajectory 3c to strafe right
-        TrajectorySequence trajectory3c = drive.trajectorySequenceBuilder(startPose)
-                .strafeLeft(5)
+        TrajectorySequence trajectory3cb = drive.trajectorySequenceBuilder(startPose)
+                .strafeRight(10)
                 .build();
 
         // Set Trajectory 3c to strafe right
-        TrajectorySequence trajectory3cb = drive.trajectorySequenceBuilder(startPose)
-                .strafeRight(10)
+        TrajectorySequence trajectory3cbl = drive.trajectorySequenceBuilder(startPose)
+                .strafeLeft(10)
                 .build();
 
         // Set 180Traj to go forward to board
@@ -158,18 +164,12 @@ public class autoBlueAudiance extends LinearOpMode {
                 .back(backFromPixel)
                 .build();
 
-        // Set BackFromPixel to back backFromPixel
-        TrajectorySequence ForwardToPixel = drive.trajectorySequenceBuilder(startPose)
-                .forward(backFromPixel)
-                .build();
-
         // State initialization sequence is completed
         telemetry.addData("Status", "Initialized");
         telemetry.addData("Pos", leftHex.getCurrentPosition());
         telemetry.update();
 
         // Wait for the game to start (driver presses PLAY)
-        side = "Left";
         waitForStart();
         leftHex.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         rightHex.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
@@ -192,8 +192,18 @@ public class autoBlueAudiance extends LinearOpMode {
         // Wait for Robot to settle
         sleep(500);
 
-        // If senses center, update telemetry and set side
         if (distanceFront.getDistance(DistanceUnit.INCH) < 10) {
+            side = "Center";
+        } else if (distanceLeft.getDistance(DistanceUnit.INCH) < 10) {
+            side = "Left";
+        } else if (distanceRight.getDistance(DistanceUnit.INCH) < 10) {
+            side = "Right";
+        } else {
+            side = "Left";
+        }
+
+        // If senses center, update telemetry and set side
+        if (side.equals("Center")) {
             side = "Center";
             // Update Telemetry
             telemetry.addData("Side", side);
@@ -207,6 +217,15 @@ public class autoBlueAudiance extends LinearOpMode {
             drive.followTrajectorySequence(trajectory3bb);
             sleep(700);
             gripServo2.setPosition(1);
+        } else if (side.equals("Left")) {
+            drive.followTrajectorySequence(turnAngleJ);
+            armServo.setPosition(0.5); // Arm Down
+            // If Left 180; Wait, Drop Pixel, wait; 180
+            drive.followTrajectorySequence(trajectory3cbl); // Left
+            armServo.setPosition(0); // Arm Down
+            sleep(700);
+            drive.followTrajectorySequence(trajectory3cb); // Right
+            gripServo2.setPosition(1); // Drop Pixel
         } else {
             // Turn Right
             drive.followTrajectorySequence(turnAngleW);
@@ -214,81 +233,58 @@ public class autoBlueAudiance extends LinearOpMode {
             // Wait for Robot to settle
             sleep(1000);
 
-            // If senses right, update telemetry and set side
-            if (distanceFront.getDistance(DistanceUnit.INCH) < 10) {
-                side = "Right";
-                telemetry.addData("Side", side);
-                telemetry.addData("Distance Front", distanceFront.getDistance(DistanceUnit.INCH));
-                telemetry.addData("Pos", leftHex.getCurrentPosition());
-                telemetry.update();
-
-                // Move to Right
-                drive.followTrajectorySequence(trajectory3dba);
-                sleep(700);
-
-                // If Right drop Pixel
-                armServo.setPosition(0);
-                sleep(1100);
-                drive.followTrajectorySequence(trajectory3dbb);
-                sleep(700);
-                gripServo2.setPosition(1);
-                sleep(700);
-                armServo.setPosition(0.94);
-                sleep(500);
-                drive.followTrajectorySequence(turnAngleP);
-            } else {
-                // If Left 180; Wait, Drop Pixel, wait; 180
-                drive.followTrajectorySequence(Traj180); // 180
-                armServo.setPosition(0); // Arm Down
-                sleep(700);
-                drive.followTrajectorySequence(trajectory3cb); // Right
-                gripServo2.setPosition(1); // Drop Pixel
-                sleep(700);
-                drive.followTrajectorySequence(BackFromPixel); // Back
-                sleep(700);
-                armServo.setPosition(0.94);
-                sleep(700);
-                drive.followTrajectorySequence(turnAngleG);
-            }
-        }
-        armServo.setPosition(0.94);
-        while(!toBoard && opModeIsActive()){
-
-            // Set Power to Motors Based on Log Func
-            double power = -0.5 * ((0.6 * Math.log10(distanceBack.getDistance(DistanceUnit.INCH) - DISTANCE_FROM_BACKBOARD)) + 0.2);
-
-            // Set Distance to Board Var for Easy Access
-            double distance_to_board = distanceBack.getDistance(DistanceUnit.INCH);
-
-            // Check if within tolerable distance to board
-            if (distance_to_board < (DISTANCE_FROM_BACKBOARD + 0.4)) {
-                // If tolerable, break out of loop
-                toBoard = true;
-                break;
-            }
-
-            if (power < 0) {
-                motor1.setPower(power);
-                motor2.setPower(power);
-                motor3.setPower(power);
-                motor4.setPower(power);
-            }
-
-            // Telemetry
-            telemetry.addData("Distance (inch)", distance_to_board);
-            telemetry.addData("Pos", rightHex.getCurrentPosition());
+            telemetry.addData("Side", side);
+            telemetry.addData("Distance Front", distanceFront.getDistance(DistanceUnit.INCH));
+            telemetry.addData("Pos", leftHex.getCurrentPosition());
             telemetry.update();
+            // Move to Right
+            drive.followTrajectorySequence(trajectory3dba);
+            sleep(700);
+            // If Right drop Pixel
+            armServo.setPosition(0);
+            sleep(1100);
+            drive.followTrajectorySequence(trajectory3dbb);
+            sleep(700);
+            gripServo2.setPosition(1);
         }
-        if (Objects.equals(side, "Right")) {
-            drive.followTrajectorySequence(ST96);
-        } else {
-            drive.followTrajectorySequence(ST84);
-        }
-        drive.followTrajectorySequence(turnAngleI);
-        armServo.setPosition(0);
-        sleep(1000);
-        gripServo2.setPosition(0);
-        sleep(1000);
-        armServo.setPosition(0.5);
+//        armServo.setPosition(0.94);
+//        while(!toBoard && opModeIsActive()){
+//
+//            // Set Power to Motors Based on Log Func
+//            double power = -0.5 * ((0.6 * Math.log10(distanceBack.getDistance(DistanceUnit.INCH) - DISTANCE_FROM_BACKBOARD)) + 0.2);
+//
+//            // Set Distance to Board Var for Easy Access
+//            double distance_to_board = distanceBack.getDistance(DistanceUnit.INCH);
+//
+//            // Check if within tolerable distance to board
+//            if (distance_to_board < (DISTANCE_FROM_BACKBOARD + 0.4)) {
+//                // If tolerable, break out of loop
+//                toBoard = true;
+//                break;
+//            }
+//
+//            if (power < 0) {
+//                motor1.setPower(power);
+//                motor2.setPower(power);
+//                motor3.setPower(power);
+//                motor4.setPower(power);
+//            }
+//
+//            // Telemetry
+//            telemetry.addData("Distance (inch)", distance_to_board);
+//            telemetry.addData("Pos", rightHex.getCurrentPosition());
+//            telemetry.update();
+//        }
+//        if (Objects.equals(side, "Right")) {
+//            drive.followTrajectorySequence(ST96);
+//        } else {
+//            drive.followTrajectorySequence(ST84);
+//        }
+//        drive.followTrajectorySequence(turnAngleI);
+//        armServo.setPosition(0);
+//        sleep(1000);
+//        gripServo2.setPosition(0);
+//        sleep(1000);
+//        armServo.setPosition(0.5);
     }
 }

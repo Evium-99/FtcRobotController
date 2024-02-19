@@ -154,10 +154,10 @@ public class Evium23 extends LinearOpMode {
 
             if ((gamepad1AReleased) && (gamepad2.a)) {
                 gamepad1AReleased = false;
-                if (gripServo1.getPosition() != 1) {
-                    gripServo1.setPosition(1);
+                if (gripServo2.getPosition() != 1) {
+                    gripServo2.setPosition(1);
                 } else {
-                    gripServo1.setPosition(0.4);
+                    gripServo2.setPosition(0.4);
                 }
             } else if (!gamepad2.a) {
                 gamepad1AReleased = true;
@@ -165,10 +165,10 @@ public class Evium23 extends LinearOpMode {
 
             if ((gamepad1XReleased) && (gamepad2.x)) {
                 gamepad1XReleased = false;
-                if (gripServo2.getPosition() != 1) {
-                    gripServo2.setPosition(1);
+                if (gripServo1.getPosition() != 1) {
+                    gripServo1.setPosition(1);
                 } else {
-                    gripServo2.setPosition(-1);
+                    gripServo1.setPosition(-1);
                 }
             } else if (!gamepad2.x) {
                 gamepad1XReleased = true;

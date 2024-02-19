@@ -15,6 +15,8 @@ import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.teamcode.drive.SampleMecanumDrive;
 import org.firstinspires.ftc.teamcode.trajectorysequence.TrajectorySequence;
 
+import java.util.Objects;
+
 @Config
 @Autonomous(name = "Blue Backdrop i71")
 public class autoBlueBackdrop extends LinearOpMode {
@@ -28,8 +30,7 @@ public class autoBlueBackdrop extends LinearOpMode {
     public static double positionb = -80;
     public static double Z = -1;
     public static double rightOffset = 15 * Z;
-    public static double rightOffsetDeg = 30 * Z;
-    public static double angleZ = -80;
+    public static double rightOffsetDeg = 20 * Z;
     public static double distanceForward = 30.5;
     public static double backFromPixelXS = 2.5;
     public static double toBoardFromCenter = 30;
@@ -43,7 +44,10 @@ public class autoBlueBackdrop extends LinearOpMode {
     public void runOpMode() throws InterruptedException {
         // Distance sensor on the back
         DistanceSensor distanceBack = hardwareMap.get(DistanceSensor.class, "distanceBack");
+        // Distance sensor on the right
         DistanceSensor distanceRight = hardwareMap.get(DistanceSensor.class, "distanceRight");
+        // Distance sensor on the left
+        DistanceSensor distanceLeft = hardwareMap.get(DistanceSensor.class, "distanceLeft");
 
         // Control Hub Motors
         // Front Right
@@ -97,7 +101,7 @@ public class autoBlueBackdrop extends LinearOpMode {
 
         // Set turnAngleZ to turn Z
         TrajectorySequence turnAngleZ = drive.trajectorySequenceBuilder(startPose)
-                .turn(Math.toRadians(angleZ))
+                .turn(Math.toRadians(-83.75))
                 .build();
 
         // WOOOOO
@@ -112,7 +116,7 @@ public class autoBlueBackdrop extends LinearOpMode {
 
         // Set Trajectory Strafe Right
         TrajectorySequence StrafeRightG = drive.trajectorySequenceBuilder(startPose)
-                .strafeTo(new Vector2d(2, -10))
+                .strafeTo(new Vector2d(1, -10))
                 .build();
 
         // Set Trajectory Strafe Right
@@ -135,14 +139,19 @@ public class autoBlueBackdrop extends LinearOpMode {
                 .strafeLeft(25)
                 .build();
 
+        // Set Trajectory 3 to strafe right
+        TrajectorySequence trajectory3ndc = drive.trajectorySequenceBuilder(startPose)
+                .strafeTo(new Vector2d(-10, 18))
+                .build();
+
         // Set Trajectory 3c to strafe right
         TrajectorySequence trajectory3c = drive.trajectorySequenceBuilder(startPose) // X= forward Back
-                .strafeTo(new Vector2d(-24, 9))
+                .strafeTo(new Vector2d(-15, 12))
                 .build();
 
         // Set Trajectory 3c to strafe right
         TrajectorySequence trajectory3cb = drive.trajectorySequenceBuilder(startPose) // X= forward Back
-                .turn(Math.toRadians(-40))
+                .turn(Math.toRadians(-70))
                 .build();
 
         TrajectorySequence BackFromPixelMega = drive.trajectorySequenceBuilder(startPose)
@@ -158,6 +167,11 @@ public class autoBlueBackdrop extends LinearOpMode {
                 .back(backFromPixelXS)
                 .build();
 
+        // Set BackFromPixel to back backFromPixel
+        TrajectorySequence BackFromPixelXSI = drive.trajectorySequenceBuilder(startPose)
+                .back(2.5)
+                .build();
+
         // Sat RightBoardTrajA to Right Side of Board
         TrajectorySequence RightBoardTrajA = drive.trajectorySequenceBuilder(startPose)
                 .turn(Math.toRadians(rightOffsetDeg))
@@ -165,12 +179,12 @@ public class autoBlueBackdrop extends LinearOpMode {
 
         // Sat RightBoardTrajB to Right Side of Board
         TrajectorySequence RightBoardTrajB = drive.trajectorySequenceBuilder(startPose)
-                .strafeRight(rightOffset)
+                .strafeTo(new Vector2d(-10, 8))
                 .build();
 
         // Strafe Left 15
         TrajectorySequence Traj_X_BBS_LEFTb = drive.trajectorySequenceBuilder(startPose)
-                .strafeTo(new Vector2d(-5, 10))
+                .strafeTo(new Vector2d(15, 20))
                 .build();
 
         // State initialization sequence is completed
@@ -203,9 +217,17 @@ public class autoBlueBackdrop extends LinearOpMode {
         // Wait for Robot to settle
         sleep(500);
 
-        // If senses center, update telemetry and set side
         if (distanceFront.getDistance(DistanceUnit.INCH) < 10) {
             side = "Center";
+        } else if (distanceLeft.getDistance(DistanceUnit.INCH) < 10) {
+            side = "Left";
+        } else if (distanceRight.getDistance(DistanceUnit.INCH) < 10) {
+            side = "Right";
+        }
+
+
+        // If senses center, update telemetry and set side
+        if (Objects.equals(side, "Center")) {
             // Update Telemetry
             telemetry.addData("Side", side);
             telemetry.addData("Distance Front", distanceFront.getDistance(DistanceUnit.INCH));
@@ -218,6 +240,7 @@ public class autoBlueBackdrop extends LinearOpMode {
 
             //move arm down
             armServo.setPosition(0);
+            gripServo2.setPosition(1);
             sleep(700);
             drive.followTrajectorySequence(trajectory3bb);
             sleep(1100);
@@ -230,16 +253,16 @@ public class autoBlueBackdrop extends LinearOpMode {
             drive.followTrajectorySequence(BackFromPixelXS);
 
             //bring arm up
+            sleep(700);
+            armServo.setPosition(0.5);
+            sleep(100);
             armServo.setPosition(1);
-            sleep(500);
+            sleep(700);
 
-            //turn towards board
+            // turn towards board
             drive.followTrajectorySequence(WOOOO);
             drive.followTrajectorySequence(turnAngleZ); // Turn Right
-//            drive.followTrajectorySequence(toBoardFromCenterTraj); // Back up
-//            drive.followTrajectorySequence(trajectoryLeft5);  // Move Right 5
-        } else if (distanceRight.getDistance(DistanceUnit.INCH) < 10) {
-            side = "Right";
+        } else if (Objects.equals(side, "Right")) {
             telemetry.addData("Side", side);
             telemetry.addData("Distance Front", distanceFront.getDistance(DistanceUnit.INCH));
             telemetry.addData("Pos", leftHex.getCurrentPosition());
@@ -253,7 +276,11 @@ public class autoBlueBackdrop extends LinearOpMode {
             sleep(700);
             gripServo1.setPosition(1);
             sleep(200);
+            drive.followTrajectorySequence(BackFromPixelXSI);
+            armServo.setPosition(0.5);
+            sleep(100);
             armServo.setPosition(1);
+            gripServo2.setPosition(1);
             drive.followTrajectorySequence(BackFromPixelMega);
             drive.followTrajectorySequence(RightBoardTrajA);
             // Center on Right side of Board RightBoardTrajB
@@ -264,9 +291,16 @@ public class autoBlueBackdrop extends LinearOpMode {
             drive.followTrajectorySequence(trajectory3c); // Fancy Moves
             // Drop Pixel
             gripServo1.setPosition(1);
+            sleep(200);
             drive.followTrajectorySequence(BackFromPixelMini);
+            armServo.setPosition(0.5);
+            sleep(100);
+            armServo.setPosition(1);
             drive.followTrajectorySequence(Traj_X_BBS_LEFTb);
             drive.followTrajectorySequence(trajectory3cb); // Turn
+            sleep(700);
+            armServo.setPosition(0.5);
+            sleep(100);
             armServo.setPosition(1);
         }
 
@@ -359,7 +393,11 @@ public class autoBlueBackdrop extends LinearOpMode {
 
         // Put wrist down
         armServo.setPosition(0);
-        drive.followTrajectorySequence(trajectory3nd);
+        if (Objects.equals(side, "Center") || Objects.equals(side, "Left")) {
+            drive.followTrajectorySequence(trajectory3nd);
+        } else if (Objects.equals(side, "Right")) {
+            drive.followTrajectorySequence(trajectory3ndc);
+        }
     }
     public double pidController(double reference, double state) {
         double error = reference - state;

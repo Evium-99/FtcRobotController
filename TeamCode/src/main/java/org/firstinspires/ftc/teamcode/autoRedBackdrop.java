@@ -18,7 +18,7 @@ import org.firstinspires.ftc.teamcode.trajectorysequence.TrajectorySequence;
 @Config
 @Autonomous(name = "Red Backdrop v27")
 public class autoRedBackdrop extends LinearOpMode {
-    public static double DISTANCE_FROM_BACKBOARD = 10;
+    public static double DISTANCE_FROM_BACKBOARD = 10.5;
     public static double armP = 0.002;
     public static double armI = 0;
     public static double armD = 0.2;
@@ -70,6 +70,10 @@ public class autoRedBackdrop extends LinearOpMode {
         DistanceSensor distanceFront = hardwareMap.get(DistanceSensor.class, "distanceFront");
         // Distance sensor on the back
         DistanceSensor distanceBack = hardwareMap.get(DistanceSensor.class, "distanceBack");
+        // Distance sensor on the right
+        DistanceSensor distanceRight = hardwareMap.get(DistanceSensor.class, "distanceRight");
+        // Distance sensor on the left
+        DistanceSensor distanceLeft = hardwareMap.get(DistanceSensor.class, "distanceLeft");
 
         // Change The Left side to Backwards on Drive Motors
         motor1.setDirection(DcMotor.Direction.FORWARD);
@@ -111,7 +115,7 @@ public class autoRedBackdrop extends LinearOpMode {
 
         // Set turnAngleZ to turn Z
         TrajectorySequence turnAngleCenter = drive.trajectorySequenceBuilder(startPose)
-                .turn(Math.toRadians(95))
+                .turn(Math.toRadians(105))
                 .build();
 
         // Set Trajectory 3 to strafe right
@@ -121,7 +125,7 @@ public class autoRedBackdrop extends LinearOpMode {
 
         // Set Trajectory 3 to strafe right
         TrajectorySequence trajectory3dba = drive.trajectorySequenceBuilder(startPose)
-                .strafeRight(10)
+                .strafeRight(6.75)
                 .build();
 
         // Set Trajectory 3 to strafe right
@@ -131,7 +135,7 @@ public class autoRedBackdrop extends LinearOpMode {
 
         // Set Trajectory 3c to strafe right
         TrajectorySequence trajectory3c = drive.trajectorySequenceBuilder(startPose)
-                .strafeLeft(5)
+                .strafeLeft(7)
                 .build();
 
         // Set Trajectory 3c to strafe right
@@ -141,7 +145,7 @@ public class autoRedBackdrop extends LinearOpMode {
 
         // Set toBoardFromCenterTraj to go back to board
         TrajectorySequence toBoardFromCenterTraj = drive.trajectorySequenceBuilder(startPose)
-                .back(30)
+                .back(20)
                 .build();
 
         // Set toBoardFromLeftTraj to go back to board
@@ -150,23 +154,28 @@ public class autoRedBackdrop extends LinearOpMode {
                 .build();
 
         // Set 180Traj to go forward to board
-        TrajectorySequence Traj180 = drive.trajectorySequenceBuilder(startPose)
-                .turn(Math.toRadians(160))
+        TrajectorySequence Traj90 = drive.trajectorySequenceBuilder(startPose)
+                .turn(Math.toRadians(90))
+                .build();
+
+        // Set 180Traj to go forward to board
+        TrajectorySequence Trajneg90 = drive.trajectorySequenceBuilder(startPose)
+                .turn(Math.toRadians(-86.5))
                 .build();
 
         // Set 180Traj to go forward to board
         TrajectorySequence Traj170 = drive.trajectorySequenceBuilder(startPose)
-                .turn(Math.toRadians(-185))
+                .turn(Math.toRadians(190))
                 .build();
 
         // Crazy Spline
         TrajectorySequence CrazyStrafea = drive.trajectorySequenceBuilder(startPose)
-                .strafeTo(new Vector2d(-25, 20)) // Forward Right
+                .strafeTo(new Vector2d(-15, 20)) // Back Left in reference to robot
                 .build();
 
         // Crazy Spline
         TrajectorySequence CrazyStrafeb = drive.trajectorySequenceBuilder(startPose)
-                .strafeTo(new Vector2d(-18, -10))  // X = Left Right; Y = Forward Back
+                .strafeTo(new Vector2d(-10, -20)) // Back Right in reference to robot
                 .build();
 
         // Set BackFromPixel to back backFromPixel
@@ -176,7 +185,7 @@ public class autoRedBackdrop extends LinearOpMode {
 
         // Set LeftBoardTrajA to Right Side of Board
         TrajectorySequence LeftBoardTrajA = drive.trajectorySequenceBuilder(startPose)
-                .turn(Math.toRadians(leftOffsetDeg))
+                .turn(Math.toRadians(30))
                 .build();
 
         // State initialization sequence is completed
@@ -185,7 +194,6 @@ public class autoRedBackdrop extends LinearOpMode {
         telemetry.update();
 
         // Wait for the game to start (driver presses PLAY)
-        side = "Left";
         waitForStart();
         leftHex.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         rightHex.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
@@ -208,9 +216,18 @@ public class autoRedBackdrop extends LinearOpMode {
         // Wait for Robot to settle
         sleep(500);
 
-        // If senses center, update telemetry and set side
         if (distanceFront.getDistance(DistanceUnit.INCH) < 10) {
             side = "Center";
+        } else if (distanceRight.getDistance(DistanceUnit.INCH) < 10) {
+            side = "Right";
+        } else if (distanceLeft.getDistance(DistanceUnit.INCH) < 10) {
+            side = "Left";
+        } else {
+            side = "Right";
+        }
+
+        // If senses center, update telemetry and set side
+        if (side.equals("Center")) {
             // Update Telemetry
             telemetry.addData("Side", side);
             telemetry.addData("Distance Front", distanceFront.getDistance(DistanceUnit.INCH));
@@ -234,16 +251,8 @@ public class autoRedBackdrop extends LinearOpMode {
             //back up
             drive.followTrajectorySequence(turnAngleCenter); // Turn Left
             drive.followTrajectorySequence(toBoardFromCenterTraj);
-        } else {
-            // Turn Right
-            drive.followTrajectorySequence(turnAngleW);
-
-            // Wait for Robot to settle
-            sleep(1000);
-
-            // If senses right, update telemetry and set side
-            if (distanceFront.getDistance(DistanceUnit.INCH) < 10) {
-                side = "Right";
+        } else if (side.equals("Right")) {
+                drive.followTrajectorySequence(Trajneg90);
                 telemetry.addData("Side", side);
                 telemetry.addData("Distance Front", distanceFront.getDistance(DistanceUnit.INCH));
                 telemetry.addData("Pos", leftHex.getCurrentPosition());
@@ -251,7 +260,7 @@ public class autoRedBackdrop extends LinearOpMode {
 
                 // Move to Right
                 drive.followTrajectorySequence(trajectory3dba);
-                sleep(700);
+                sleep(200);
 
                 // If Right drop Pixel
                 armServo.setPosition(0.2);
@@ -268,23 +277,22 @@ public class autoRedBackdrop extends LinearOpMode {
                 drive.followTrajectorySequence(Traj170);
                 drive.followTrajectorySequence(CrazyStrafea);
                 drive.followTrajectorySequence(CrazyStrafeb);
-            } else {
-                // If Left 180; Wait, Drop Pixel, wait; 180
-                drive.followTrajectorySequence(Traj180);
-                drive.followTrajectorySequence(trajectory3c);
-                sleep(700);
-                armServo.setPosition(0);
-                sleep(1100);
-                drive.followTrajectorySequence(trajectory3cb);
-                gripServo2.setPosition(1);
-                sleep(700);
-                drive.followTrajectorySequence(BackFromPixel);
-                sleep(700);
-                armServo.setPosition(0.94);
-                sleep(700);
-                drive.followTrajectorySequence(LeftBoardTrajA);
-                drive.followTrajectorySequence(toBoardFromLeftTraj);
-            }
+        } else {
+            // If Left 180; Wait, Drop Pixel, wait; 180
+            drive.followTrajectorySequence(Traj90);
+            drive.followTrajectorySequence(trajectory3c);
+            sleep(700);
+            armServo.setPosition(0);
+            sleep(1100);
+            drive.followTrajectorySequence(trajectory3cb);
+            gripServo2.setPosition(1);
+            sleep(700);
+            drive.followTrajectorySequence(BackFromPixel);
+            sleep(700);
+            armServo.setPosition(0.94);
+            sleep(700);
+            drive.followTrajectorySequence(LeftBoardTrajA);
+            drive.followTrajectorySequence(toBoardFromLeftTraj);
         }
 
         // Move toward the Board
@@ -353,10 +361,8 @@ public class autoRedBackdrop extends LinearOpMode {
         rightHex.setPower(0);
         sleep(1000);
 
-        // drop pixels
+        // drop pixel
         gripServo1.setPosition(0);
-
-        sleep(1000);
 
         // Move Arm back down
         while (opModeIsActive() && !stopPowerb) {
