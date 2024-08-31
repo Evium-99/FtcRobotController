@@ -18,7 +18,7 @@ import org.firstinspires.ftc.teamcode.trajectorysequence.TrajectorySequence;
 @Config
 @Autonomous(name = "Red Backdrop v27")
 public class autoRedBackdrop extends LinearOpMode {
-    public static double DISTANCE_FROM_BACKBOARD = 10.5;
+    public static double DISTANCE_FROM_BACKBOARD = 10;
     public static double armP = 0.002;
     public static double armI = 0;
     public static double armD = 0.2;
@@ -32,7 +32,7 @@ public class autoRedBackdrop extends LinearOpMode {
     public static double distanceForward = 29;
     public static double backFromPixel = 5;
     public static double strafeRightB = 8 * Z;
-    public static double toBoardFromLeft = 30;
+    public static double toBoardFromLeft = 15;
     public String side = "Left";
     ElapsedTime timer = new ElapsedTime();
     boolean stopPower = false;
@@ -185,7 +185,7 @@ public class autoRedBackdrop extends LinearOpMode {
 
         // Set LeftBoardTrajA to Right Side of Board
         TrajectorySequence LeftBoardTrajA = drive.trajectorySequenceBuilder(startPose)
-                .turn(Math.toRadians(30))
+                .turn(Math.toRadians(26))
                 .build();
 
         // State initialization sequence is completed
@@ -246,7 +246,7 @@ public class autoRedBackdrop extends LinearOpMode {
             gripServo2.setPosition(1);
             sleep(500);
 
-            armServo.setPosition(0.94);
+            armServo.setPosition(1);
 
             //back up
             drive.followTrajectorySequence(turnAngleCenter); // Turn Left
@@ -272,7 +272,7 @@ public class autoRedBackdrop extends LinearOpMode {
                 sleep(700);
                 drive.followTrajectorySequence(BackFromPixel);
                 sleep(500);
-                armServo.setPosition(0.94);
+                armServo.setPosition(1);
                 // Turn 180
                 drive.followTrajectorySequence(Traj170);
                 drive.followTrajectorySequence(CrazyStrafea);
@@ -289,7 +289,7 @@ public class autoRedBackdrop extends LinearOpMode {
             sleep(700);
             drive.followTrajectorySequence(BackFromPixel);
             sleep(700);
-            armServo.setPosition(0.94);
+            armServo.setPosition(1);
             sleep(700);
             drive.followTrajectorySequence(LeftBoardTrajA);
             drive.followTrajectorySequence(toBoardFromLeftTraj);

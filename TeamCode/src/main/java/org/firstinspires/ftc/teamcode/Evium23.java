@@ -86,9 +86,9 @@ public class Evium23 extends LinearOpMode {
             double x;
             double rx;
             if (gamepad1.left_bumper) {
-                y = 0.5 * ((-gamepad1.left_stick_y*0.8) + (Math.pow(-gamepad1.left_stick_y, 3)*0.2)); // Remember, Y stick value is reversed
-                x = 0.5 * ((gamepad1.left_stick_x*0.8) + (Math.pow(gamepad1.left_stick_x, 3)*0.2)); // Counteract imperfect strafing
-                rx = 0.5 * ((gamepad1.right_stick_x*0.8) + (Math.pow(gamepad1.right_stick_x, 3)*0.2));
+                y = 0.5 * ((-gamepad1.left_stick_y*0.75) + (Math.pow(-gamepad1.left_stick_y, 3)*0.25)); // Remember, Y stick value is reversed
+                x = 0.5 * ((gamepad1.left_stick_x*0.75) + (Math.pow(gamepad1.left_stick_x, 3)*0.25)); // Counteract imperfect strafing
+                rx = 0.5 * ((gamepad1.right_stick_x*0.75) + (Math.pow(gamepad1.right_stick_x, 3)*0.25));
             } else {
                 y = (-gamepad1.left_stick_y*0.5) + (Math.pow(-gamepad1.left_stick_y, 9)*0.5); // Remember, Y stick value is reversed
                 x = (gamepad1.left_stick_x*0.5) + (Math.pow(gamepad1.left_stick_x, 9)*0.5); // Counteract imperfect strafing

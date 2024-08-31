@@ -119,6 +119,11 @@ public class autoBlueBackdrop extends LinearOpMode {
                 .strafeTo(new Vector2d(1, -10))
                 .build();
 
+        // Back
+        TrajectorySequence tempBackNew4675 = drive.trajectorySequenceBuilder(startPose)
+                .back(1.5)
+                .build();
+
         // Set Trajectory Strafe Right
         TrajectorySequence StrafeRightO = drive.trajectorySequenceBuilder(startPose)
                 .strafeRight(-10)
@@ -235,6 +240,7 @@ public class autoBlueBackdrop extends LinearOpMode {
             telemetry.update();
             // Place Pixel then turn back and go to board
             //strafe left
+            drive.followTrajectorySequence(tempBackNew4675);
             drive.followTrajectorySequence(trajectory3b);
             sleep(700);
 

@@ -90,6 +90,11 @@ public class autoBlueAudiance extends LinearOpMode {
                 .forward(distanceForward)
                 .build();
 
+        // Set Trajectory 1 to go forward
+        TrajectorySequence backEnd = drive.trajectorySequenceBuilder(startPose)
+                .back(5)
+                .build();
+
         // Strafe Right 84
         TrajectorySequence ST84 = drive.trajectorySequenceBuilder(startPose)
                 .strafeLeft(84)
@@ -146,12 +151,12 @@ public class autoBlueAudiance extends LinearOpMode {
 
         // Set Trajectory 3c to strafe right
         TrajectorySequence trajectory3cb = drive.trajectorySequenceBuilder(startPose)
-                .strafeRight(10)
+                .strafeRight(13)
                 .build();
 
         // Set Trajectory 3c to strafe right
         TrajectorySequence trajectory3cbl = drive.trajectorySequenceBuilder(startPose)
-                .strafeLeft(10)
+                .strafeLeft(13)
                 .build();
 
         // Set 180Traj to go forward to board
@@ -162,6 +167,11 @@ public class autoBlueAudiance extends LinearOpMode {
         // Set BackFromPixel to back backFromPixel
         TrajectorySequence BackFromPixel = drive.trajectorySequenceBuilder(startPose)
                 .back(backFromPixel)
+                .build();
+
+        // Back
+        TrajectorySequence tempBackNew4675 = drive.trajectorySequenceBuilder(startPose)
+                .back(1.5)
                 .build();
 
         // State initialization sequence is completed
@@ -198,18 +208,19 @@ public class autoBlueAudiance extends LinearOpMode {
             side = "Left";
         } else if (distanceRight.getDistance(DistanceUnit.INCH) < 10) {
             side = "Right";
-        } else {
-            side = "Left";
         }
+
+        telemetry.addData("Side", side);
+        telemetry.addData("Distance Front", distanceFront.getDistance(DistanceUnit.INCH));
+        telemetry.addData("Distance Left", distanceLeft.getDistance(DistanceUnit.INCH));
+        telemetry.addData("Distance Right", distanceRight.getDistance(DistanceUnit.INCH));
+        telemetry.addData("Pos", leftHex.getCurrentPosition());
+        telemetry.update();
 
         // If senses center, update telemetry and set side
         if (side.equals("Center")) {
             side = "Center";
-            // Update Telemetry
-            telemetry.addData("Side", side);
-            telemetry.addData("Distance Front", distanceFront.getDistance(DistanceUnit.INCH));
-            telemetry.addData("Pos", leftHex.getCurrentPosition());
-            telemetry.update();
+            drive.followTrajectorySequence(tempBackNew4675);
             drive.followTrajectorySequence(trajectory3b);
             sleep(700);
             armServo.setPosition(0);
@@ -247,6 +258,7 @@ public class autoBlueAudiance extends LinearOpMode {
             sleep(700);
             gripServo2.setPosition(1);
         }
+        drive.followTrajectorySequence(backEnd);
 //        armServo.setPosition(0.94);
 //        while(!toBoard && opModeIsActive()){
 //

@@ -141,6 +141,20 @@ public class autoRedAudiance extends LinearOpMode {
                 .build();
 
         // Set Trajectory 3 to strafe right
+        TrajectorySequence trajectory3ab = drive.trajectorySequenceBuilder(startPose)
+                .back(1.5)
+                .build();
+        // Set Trajectory 3 to strafe right
+        TrajectorySequence trajectory3abc = drive.trajectorySequenceBuilder(startPose)
+                .back(10)
+                .build();
+
+        // Set Trajectory 3 to strafe right
+        TrajectorySequence trajectory3abd = drive.trajectorySequenceBuilder(startPose)
+                .back(5)
+                .build();
+
+        // Set Trajectory 3 to strafe right
         TrajectorySequence trajectory3bb = drive.trajectorySequenceBuilder(startPose)
                 .strafeRight(7)
                 .build();
@@ -263,6 +277,7 @@ public class autoRedAudiance extends LinearOpMode {
         // If senses center, update telemetry and set side
         if (side.equals("Center")) {
             side = "Center";
+            drive.followTrajectorySequence(trajectory3ab);
             // Update Telemetry
             telemetry.addData("Side", side);
             telemetry.addData("Distance Front", distanceFront.getDistance(DistanceUnit.INCH));
@@ -281,6 +296,7 @@ public class autoRedAudiance extends LinearOpMode {
 
             //open purple side
             gripServo1.setPosition(1);
+            drive.followTrajectorySequence(trajectory3abc);
 //            sleep(700);
 //
 //            //back up
@@ -314,6 +330,7 @@ public class autoRedAudiance extends LinearOpMode {
             sleep(700);
             gripServo1.setPosition(1);
             drive.followTrajectorySequence(BackFromPixelMini);
+            drive.followTrajectorySequence(trajectory3abd);
 //                sleep(500);
 //                drive.followTrajectorySequence(BackFromPixelMega);
 //                armServo.setPosition(0.6);
@@ -332,6 +349,7 @@ public class autoRedAudiance extends LinearOpMode {
                 drive.followTrajectorySequence(trajectory3cbv);
                 armServo.setPosition(0);
                 gripServo2.setPosition(1);
+                drive.followTrajectorySequence(trajectory3abd);
             }
 
 //        armServo.setPosition(0.94);
